@@ -8,14 +8,16 @@ const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
+  // Load workspaces with useCallback so it can be called externally
+  const loadWorkspaces = useCallback(async () => {
+    const data = await db.workspaces.list();
+    setWorkspaces(data);
+  }, []);
+
   // Load workspaces on mount
   useEffect(() => {
-    const loadWorkspaces = async () => {
-      const data = await db.workspaces.list();
-      setWorkspaces(data);
-    };
     loadWorkspaces();
-  }, []);
+  }, [loadWorkspaces]);
 
   // Set default active workspace when workspaces are loaded
   useEffect(() => {
@@ -31,13 +33,12 @@ const App: React.FC = () => {
     } else {
       setActiveWorkspaceId(null);
     }
-  }, [workspaces]);
+  }, [workspaces, activeWorkspaceId]);
 
   const handleDeleteWorkspace = useCallback(async (id: string) => {
     await db.workspaces.delete(id);
-    const updatedWorkspaces = await db.workspaces.list();
-    setWorkspaces(updatedWorkspaces);
-  }, []);
+    await loadWorkspaces();
+  }, [loadWorkspaces]);
 
   const handleUpdateWorkspace = useCallback(async (id: string, updates: Partial<Workspace>) => {
     await db.workspaces.update(id, updates);
