@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="#3b82f6"/>
+
+  <!-- Folder -->
+  <path d="M60 80C60 68.8954 68.8954 60 80 60H130L145 75H200C211.105 75 220 83.8954 220 95V190C220 201.105 211.105 210 200 210H80C68.8954 210 60 201.105 60 190V80Z" fill="#ffffff"/>
+
+  <!-- Checkmark -->
+  <g transform="translate(140, 130)">
+    <circle cx="15" cy="15" r="13" fill="#10b981"/>
+    <path d="M8 15L12 19L20 11" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
