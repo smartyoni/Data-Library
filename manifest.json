@@ -1,0 +1,61 @@
+{
+  "name": "자료실 - Data Library",
+  "short_name": "자료실",
+  "description": "작업공간 기반의 계약서, 매물 관리 및 체크리스트 앱",
+  "start_url": "/Data-Library/",
+  "scope": "/Data-Library/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#09090b",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/Data-Library/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/Data-Library/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/Data-Library/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "/Data-Library/favicon.svg",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/Data-Library/favicon.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "새 작업공간 만들기",
+      "short_name": "새 공간",
+      "description": "새로운 작업공간 생성",
+      "url": "/Data-Library/?action=new-workspace",
+      "icons": [
+        {
+          "src": "/Data-Library/favicon.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

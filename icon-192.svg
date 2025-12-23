@@ -1,0 +1,19 @@
+<svg width="192" height="192" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="256" height="256" fill="#09090b"/>
+
+  <!-- Main folder/document shape -->
+  <path d="M40 60C40 48.8954 48.8954 40 60 40H120L140 60H196C207.105 60 216 68.8954 216 80V200C216 211.105 207.105 220 196 220H60C48.8954 220 40 211.105 40 200V60Z" fill="#3b82f6" stroke="#e4e4e7" stroke-width="2"/>
+
+  <!-- File/document indicator -->
+  <rect x="60" y="90" width="40" height="50" fill="#e4e4e7" rx="3"/>
+  <line x1="65" y1="100" x2="95" y2="100" stroke="#09090b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="65" y1="110" x2="95" y2="110" stroke="#09090b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="65" y1="120" x2="85" y2="120" stroke="#09090b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Checkmark -->
+  <g transform="translate(130, 100)">
+    <circle cx="25" cy="25" r="22" fill="#10b981" stroke="#e4e4e7" stroke-width="2"/>
+    <path d="M15 25L22 32L35 19" stroke="#09090b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
