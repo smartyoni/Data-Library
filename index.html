@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>자료실</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: '#09090b', // zinc-950
+              surface: '#18181b', // zinc-900
+              border: '#27272a', // zinc-800
+              primary: '#e4e4e7', // zinc-200
+              secondary: '#a1a1aa', // zinc-400
+              accent: '#3b82f6', // blue-500
+              danger: '#ef4444', // red-500
+              success: '#10b981', // emerald-500
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Custom scrollbar for dark theme */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #09090b; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #27272a; 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #3f3f46; 
+      }
+      body {
+        background-color: #09090b;
+        color: #e4e4e7;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      /* Light Mode Overrides */
+      .light-mode body {
+        background-color: #ffffff;
+        color: #18181b;
+      }
+
+      /* Light Mode Backgrounds */
+      .light-mode .bg-black { background-color: #ffffff !important; }
+      .light-mode .bg-zinc-950 { background-color: #ffffff !important; }
+      .light-mode .bg-zinc-900 { background-color: #f4f4f5 !important; }
+      .light-mode .bg-zinc-800 { background-color: #e4e4e7 !important; }
+      .light-mode .bg-background { background-color: #ffffff !important; }
+      .light-mode .bg-surface { background-color: #f4f4f5 !important; }
+      
+      /* Light Mode Texts */
+      .light-mode .text-white { color: #18181b !important; }
+      .light-mode .text-zinc-100 { color: #18181b !important; }
+      .light-mode .text-zinc-200 { color: #27272a !important; }
+      .light-mode .text-zinc-300 { color: #3f3f46 !important; }
+      .light-mode .text-zinc-400 { color: #71717a !important; }
+      .light-mode .text-zinc-500 { color: #a1a1aa !important; }
+      
+      /* Light Mode Borders */
+      .light-mode .border-zinc-700 { border-color: #d4d4d8 !important; }
+      .light-mode .border-zinc-800 { border-color: #e4e4e7 !important; }
+      .light-mode .border-border { border-color: #e4e4e7 !important; }
+      
+      /* Light Mode Inputs */
+      .light-mode input::placeholder, 
+      .light-mode textarea::placeholder {
+          color: #a1a1aa !important;
+      }
+      
+      /* Light Mode Scrollbar */
+      .light-mode ::-webkit-scrollbar-track { background: #f4f4f5; }
+      .light-mode ::-webkit-scrollbar-thumb { background: #d4d4d8; }
+      .light-mode ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
