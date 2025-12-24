@@ -16,6 +16,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
   const [description, setDescription] = useState(item.description);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Sync state when item changes
   useEffect(() => {
@@ -40,6 +42,25 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
         await firestoreDb.items.update({ id: item.id, description });
         onUpdateItem(item.id, { description });
         setIsSaving(false);
+    }
+  };
+
+  // Double-click to edit
+  const handleDescriptionDoubleClick = () => {
+    setIsEditingDesc(true);
+  };
+
+  // Long press for mobile
+  const handleTouchStart = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      setIsEditingDesc(true);
+    }, 300);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
   };
 
@@ -102,9 +123,18 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
             
             {/* Top: Description (Allocated ~40% of space or min 200px) */}
             <div className="h-[40%] min-h-[200px] flex flex-col bg-surface/40 rounded-xl border border-border shadow-sm overflow-hidden group focus-within:border-zinc-600 transition-colors">
-               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-zinc-900/30">
-                 <Icons.File className="w-4 h-4 text-zinc-400" />
-                 <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">상세 내용</span>
+               <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border/50 bg-zinc-900/30">
+                 <div className="flex items-center gap-2">
+                   <Icons.File className="w-4 h-4 text-zinc-400" />
+                   <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">상세 내용</span>
+                 </div>
+                 <button
+                   onClick={() => setIsPreviewOpen(true)}
+                   className="text-xs px-2 py-1 rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
+                   title="전체 내용 보기"
+                 >
+                   미리보기
+                 </button>
                </div>
                
                {isEditingDesc ? (
@@ -117,10 +147,12 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
                    placeholder="이 항목에 대한 상세한 내용을 자유롭게 작성하세요..."
                  />
                ) : (
-                 <div 
-                   onClick={() => setIsEditingDesc(true)}
-                   className="flex-1 w-full p-4 text-sm text-zinc-300 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar cursor-text hover:bg-white/5 transition-colors"
-                   title="클릭하여 수정"
+                 <div
+                   onDoubleClick={handleDescriptionDoubleClick}
+                   onTouchStart={handleTouchStart}
+                   onTouchEnd={handleTouchEnd}
+                   className="flex-1 w-full p-4 text-sm text-zinc-300 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar cursor-text select-none hover:bg-white/5 transition-colors"
+                   title="더블클릭하거나 길게눌러 수정"
                  >
                    {description ? (
                      renderContentWithLinks(description)
@@ -140,6 +172,52 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
 
           </div>
       </div>
+
+      {/* Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-lg shadow-lg flex flex-col h-[90vh] max-w-2xl w-full">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-zinc-900/30">
+              <span className="text-lg font-semibold text-white">상세 내용</span>
+              <button
+                onClick={() => setIsPreviewOpen(false)}
+                className="text-zinc-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6 text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed custom-scrollbar">
+              {description ? (
+                renderContentWithLinks(description)
+              ) : (
+                <span className="text-zinc-700">내용이 없습니다.</span>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-zinc-900/30">
+              <button
+                onClick={() => setIsPreviewOpen(false)}
+                className="px-4 py-2 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-sm"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingDesc(true);
+                  setIsPreviewOpen(false);
+                }}
+                className="px-4 py-2 rounded bg-accent text-white hover:bg-accent/90 transition-colors text-sm"
+              >
+                수정
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
