@@ -71,18 +71,23 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   return (
     <div className="h-full flex flex-col pt-2">
       {/* Quick Input Field */}
-      <div className="mb-4 flex-shrink-0 relative group">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-accent transition-colors">
-            <Icons.Plus className="w-5 h-5" />
-        </div>
-        <input 
+      <div className="mb-4 flex-shrink-0 flex items-center gap-2">
+        <input
             type="text"
             value={newItemText}
             onChange={(e) => setNewItemText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="새로운 할 일을 입력하고 Enter를 누르세요"
-            className="w-full bg-zinc-900/50 border border-zinc-700 text-sm text-zinc-200 rounded-lg py-2.5 pl-10 pr-4 focus:ring-1 focus:ring-accent focus:border-accent focus:outline-none transition-all placeholder-zinc-600 shadow-sm"
+            placeholder="새로운 할 일을 입력하세요"
+            className="flex-1 bg-zinc-900/50 border border-zinc-700 text-sm text-zinc-200 rounded-lg py-2.5 px-3 focus:ring-1 focus:ring-accent focus:border-accent focus:outline-none transition-all placeholder-zinc-600 shadow-sm"
         />
+        <button
+          onClick={handleAddItem}
+          disabled={!newItemText.trim()}
+          className="flex-shrink-0 p-2.5 bg-accent/10 border border-accent/30 text-accent rounded-lg hover:bg-accent/20 hover:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          title="항목 추가 (또는 Enter 입력)"
+        >
+          <Icons.Plus className="w-5 h-5" />
+        </button>
       </div>
 
       {/* List */}
