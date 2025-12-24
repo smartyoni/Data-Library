@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Category } from '../types';
 import { Icons } from './ui/Icons';
 import firestoreDb from '../services/firestoreDb';
-import { Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock, Home } from 'lucide-react';
 
 interface SidebarProps {
   categories: Category[];
@@ -112,8 +112,18 @@ const Sidebar: React.FC<SidebarProps> = ({
              {isLocked && <Lock className="w-3.5 h-3.5 text-amber-500/80" />}
         </div>
 
-        {/* Compact Theme Toggle Button Group (D/L) */}
-        <div className="flex bg-zinc-900 p-0.5 rounded-md border border-zinc-800/50">
+        {/* Home Icon and Theme Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded transition-colors"
+            title="홈"
+          >
+            <Home className="w-5 h-5" />
+          </button>
+
+          {/* Compact Theme Toggle Button Group (D/L) */}
+          <div className="flex bg-zinc-900 p-0.5 rounded-md border border-zinc-800/50">
              <button 
                onClick={() => toggleTheme('dark')}
                className={`w-7 h-7 flex items-center justify-center text-xs font-bold rounded transition-all ${theme === 'dark' ? 'bg-zinc-700 text-white shadow ring-1 ring-black/20' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
@@ -128,6 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({
              >
                L
              </button>
+          </div>
         </div>
       </div>
 
