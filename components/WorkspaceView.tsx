@@ -49,15 +49,20 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     if (selectedCategoryId) {
       loadItems(selectedCategoryId);
       setSelectedItemId(null);
-      // Close bookmark manager when category is selected
-      if (showBookmarks && onCloseBookmarks) {
-        onCloseBookmarks();
-      }
     } else {
       setItems([]);
       setSelectedItemId(null);
     }
-  }, [selectedCategoryId, showBookmarks, onCloseBookmarks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryId]);
+
+  // Close bookmark manager when category is selected
+  useEffect(() => {
+    if (selectedCategoryId && showBookmarks && onCloseBookmarks) {
+      onCloseBookmarks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryId]);
 
   const loadCategories = async () => {
     const data = await firestoreDb.categories.listByWorkspace(workspace.id);
