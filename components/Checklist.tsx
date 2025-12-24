@@ -126,9 +126,9 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
       {/* List */}
       <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
         {items.map((item) => (
-          <div 
-            key={item.id} 
-            className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-zinc-800/50"
+          <div
+            key={item.id}
+            className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30"
           >
             <div className="pt-1">
               <input 
