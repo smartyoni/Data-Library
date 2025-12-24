@@ -116,6 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => onSelectCategory('')}
             className="p-1.5 text-green-500 border border-green-500/50 hover:text-white hover:bg-green-500/20 hover:border-green-500 rounded transition-colors"
             title="홈"
           >
