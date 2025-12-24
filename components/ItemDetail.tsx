@@ -17,6 +17,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isEditingInPreview, setIsEditingInPreview] = useState(false);
   const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Sync state when item changes
@@ -181,7 +182,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-zinc-900/30">
               <span className="text-lg font-semibold text-white">상세 내용</span>
               <button
-                onClick={() => setIsPreviewOpen(false)}
+                onClick={() => {
+                  setIsPreviewOpen(false);
+                  setIsEditingInPreview(false);
+                }}
                 className="text-zinc-400 hover:text-white text-2xl"
               >
                 ×
@@ -189,31 +193,68 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6 text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed custom-scrollbar">
-              {description ? (
-                renderContentWithLinks(description)
-              ) : (
-                <span className="text-zinc-700">내용이 없습니다.</span>
-              )}
-            </div>
+            {isEditingInPreview ? (
+              <textarea
+                autoFocus
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="flex-1 w-full bg-transparent border-none p-6 text-sm text-zinc-300 resize-none focus:ring-0 placeholder-zinc-700 leading-relaxed custom-scrollbar"
+                placeholder="이 항목에 대한 상세한 내용을 자유롭게 작성하세요..."
+              />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-6 text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed custom-scrollbar">
+                {description ? (
+                  renderContentWithLinks(description)
+                ) : (
+                  <span className="text-zinc-700">내용이 없습니다.</span>
+                )}
+              </div>
+            )}
 
             {/* Modal Footer */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-zinc-900/30">
-              <button
-                onClick={() => setIsPreviewOpen(false)}
-                className="px-4 py-2 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-sm"
-              >
-                닫기
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditingDesc(true);
-                  setIsPreviewOpen(false);
-                }}
-                className="px-4 py-2 rounded bg-accent text-white hover:bg-accent/90 transition-colors text-sm"
-              >
-                수정
-              </button>
+              {isEditingInPreview ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setDescription(item.description);
+                      setIsEditingInPreview(false);
+                    }}
+                    className="px-4 py-2 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-sm"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (description !== item.description) {
+                        setIsSaving(true);
+                        await firestoreDb.items.update({ id: item.id, description });
+                        onUpdateItem(item.id, { description });
+                        setIsSaving(false);
+                      }
+                      setIsEditingInPreview(false);
+                    }}
+                    className="px-4 py-2 rounded bg-accent text-white hover:bg-accent/90 transition-colors text-sm"
+                  >
+                    저장
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsPreviewOpen(false)}
+                    className="px-4 py-2 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-sm"
+                  >
+                    닫기
+                  </button>
+                  <button
+                    onClick={() => setIsEditingInPreview(true)}
+                    className="px-4 py-2 rounded bg-accent text-white hover:bg-accent/90 transition-colors text-sm"
+                  >
+                    수정
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
