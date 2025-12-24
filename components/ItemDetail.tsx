@@ -176,8 +176,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
 
       {/* Preview Modal */}
       {isPreviewOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-lg shadow-lg flex flex-col h-[90vh] max-w-2xl w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setIsPreviewOpen(false)}>
+          <div className="bg-surface rounded-lg shadow-lg flex flex-col h-[90vh] max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-zinc-900/30">
               <span className="text-lg font-semibold text-white">상세 내용</span>
