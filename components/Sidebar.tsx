@@ -29,12 +29,14 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newCatName, setNewCatName] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
 
   // Initialize theme based on current DOM state
   useEffect(() => {
     if (document.documentElement.classList.contains('light-mode')) {
         setTheme('light');
+    } else {
+        setTheme('dark');
     }
   }, []);
 
