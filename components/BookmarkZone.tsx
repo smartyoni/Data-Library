@@ -72,10 +72,10 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
         />
       </div>
 
-      {/* Bookmarks Grid (3x3) */}
+      {/* Bookmarks Grid (4 columns) */}
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
         {bookmarks.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {bookmarks.map((bookmark) => (
               <BookmarkCard
                 key={bookmark.id}
@@ -89,7 +89,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
             {bookmarks.length < 9 && (
               <button
                 onClick={onAddBookmark}
-                className="flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/20 hover:bg-zinc-900/40 transition-all aspect-square group"
+                className="flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/20 hover:bg-zinc-900/40 transition-all aspect-square h-12 group"
                 title="북마크 추가"
               >
                 <Icons.Plus className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
