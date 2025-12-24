@@ -100,6 +100,51 @@ body {
   color: #a1a1aa !important;
 }
 
+/* Light Mode Accent Colors */
+.light-mode .text-accent {
+  color: #4f46e5 !important;
+}
+
+.light-mode .bg-accent\/10 {
+  background-color: rgba(79, 70, 229, 0.1) !important;
+}
+
+.light-mode .bg-accent\/20 {
+  background-color: rgba(79, 70, 229, 0.2) !important;
+}
+
+.light-mode .border-accent {
+  border-color: #4f46e5 !important;
+}
+
+.light-mode .border-accent\/20 {
+  border-color: rgba(79, 70, 229, 0.2) !important;
+}
+
+.light-mode .border-accent\/30 {
+  border-color: rgba(79, 70, 229, 0.3) !important;
+}
+
+.light-mode .border-accent\/50 {
+  border-color: rgba(79, 70, 229, 0.5) !important;
+}
+
+.light-mode .hover\:text-accent:hover {
+  color: #4f46e5 !important;
+}
+
+.light-mode .hover\:bg-accent\/20:hover {
+  background-color: rgba(79, 70, 229, 0.2) !important;
+}
+
+.light-mode .focus\:ring-accent:focus {
+  --tw-ring-color: #4f46e5 !important;
+}
+
+.light-mode .focus\:border-accent:focus {
+  border-color: #4f46e5 !important;
+}
+
 /* Light Mode Scrollbar */
 .light-mode ::-webkit-scrollbar-track {
   background: #f4f4f5;
