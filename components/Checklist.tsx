@@ -151,7 +151,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                     if (e.key === 'Enter') handleSaveItemText(item.id);
                     if (e.key === 'Escape') setEditingItemId(null);
                   }}
-                  className="w-full bg-zinc-950 border border-accent rounded px-1 py-0 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent"
+                  className="w-full bg-zinc-950 border border-accent rounded px-1 py-3 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent min-h-10"
                 />
               ) : (
                 <div
