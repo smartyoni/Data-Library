@@ -243,13 +243,13 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
                 <>
                   <button
                     onClick={() => setIsPreviewOpen(false)}
-                    className="px-4 py-2 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-sm"
+                    className="px-4 py-2 rounded bg-accent text-white hover:bg-accent/90 transition-colors text-sm"
                   >
                     닫기
                   </button>
                   <button
                     onClick={() => setIsEditingInPreview(true)}
-                    className="px-4 py-2 rounded bg-accent text-white hover:bg-accent/90 transition-colors text-sm"
+                    className="px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600 transition-colors text-sm"
                   >
                     수정
                   </button>
