@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import WorkspaceView from './components/WorkspaceView';
+import BookmarkManager from './components/BookmarkManager';
 import BottomNav from './components/BottomNav';
 import { Workspace } from './types';
 import firestoreDb from './services/firestoreDb';
@@ -7,6 +8,7 @@ import firestoreDb from './services/firestoreDb';
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [isBookmarkViewActive, setIsBookmarkViewActive] = useState(false);
 
   // Load workspaces with useCallback so it can be called externally
   const loadWorkspaces = useCallback(async () => {
@@ -55,11 +57,16 @@ const App: React.FC = () => {
       
       {/* Main Workspace Area (Flex Grow) */}
       <div className="flex-1 overflow-hidden relative">
-        {activeWorkspace ? (
-          <WorkspaceView 
-            workspace={activeWorkspace} 
+        {isBookmarkViewActive ? (
+          <BookmarkManager
+            onBack={() => setIsBookmarkViewActive(false)}
+          />
+        ) : activeWorkspace ? (
+          <WorkspaceView
+            workspace={activeWorkspace}
             onDelete={handleDeleteWorkspace}
             onUpdate={handleUpdateWorkspace}
+            onShowBookmarks={() => setIsBookmarkViewActive(true)}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-500">

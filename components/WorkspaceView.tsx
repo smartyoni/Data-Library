@@ -11,9 +11,10 @@ interface WorkspaceViewProps {
   workspace: Workspace;
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Workspace>) => void;
+  onShowBookmarks: () => void;
 }
 
-const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUpdate }) => {
+const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUpdate, onShowBookmarks }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -132,7 +133,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
       {/* Column 1: Categories */}
       {/* Mobile: Hidden if category selected. Desktop: Always visible (w-64) */}
       <div className={`${selectedCategoryId ? 'hidden md:flex' : 'flex'} w-full md:w-64 flex-col border-r border-border bg-surface`}>
-        <Sidebar 
+        <Sidebar
           categories={categories}
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={setSelectedCategoryId}
@@ -142,6 +143,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
           onAddCategory={handleAddCategory}
           onDeleteWorkspace={handleDeleteWorkspace}
           onToggleLock={handleToggleLock}
+          onShowBookmarks={onShowBookmarks}
         />
       </div>
 

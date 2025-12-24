@@ -13,7 +13,7 @@ import {
   Timestamp,
   QueryConstraint,
 } from 'firebase/firestore';
-import { Category, Item, ChecklistItem, Workspace } from '../types';
+import { Category, Item, ChecklistItem, Workspace, BookmarkZone, Bookmark } from '../types';
 
 // Helper to generate IDs
 const generateId = () => crypto.randomUUID();
@@ -25,7 +25,19 @@ const COLLECTIONS = {
   CATEGORIES: 'categories',
   ITEMS: 'items',
   CHECKLISTS: 'checklists',
+  BOOKMARK_ZONES: 'bookmark_zones',
+  BOOKMARKS: 'bookmarks',
 };
+
+// Default bookmark zones
+const DEFAULT_ZONES = [
+  { name: '영역 1', default_color: '#ef4444', order: 0 }, // Red
+  { name: '영역 2', default_color: '#f97316', order: 1 }, // Orange
+  { name: '영역 3', default_color: '#eab308', order: 2 }, // Yellow
+  { name: '영역 4', default_color: '#22c55e', order: 3 }, // Green
+  { name: '영역 5', default_color: '#3b82f6', order: 4 }, // Blue
+  { name: '영역 6', default_color: '#a855f7', order: 5 }, // Purple
+];
 
 /**
  * Firestore 기반 데이터베이스 서비스
@@ -406,6 +418,160 @@ export const firestoreDb = {
         await deleteDoc(doc(db, COLLECTIONS.CHECKLISTS, id));
       } catch (error) {
         console.error('Checklist 삭제 실패:', error);
+        throw error;
+      }
+    },
+  },
+
+  bookmarkZones: {
+    list: async (): Promise<BookmarkZone[]> => {
+      try {
+        const q = query(collection(db, COLLECTIONS.BOOKMARK_ZONES));
+        const snapshot = await getDocs(q);
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as BookmarkZone))
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      } catch (error) {
+        console.error('BookmarkZones 조회 실패:', error);
+        return [];
+      }
+    },
+
+    create: async (name: string, default_color: string, order: number): Promise<BookmarkZone> => {
+      try {
+        const docRef = await addDoc(collection(db, COLLECTIONS.BOOKMARK_ZONES), {
+          name,
+          default_color,
+          order,
+          created_at: now(),
+        });
+        return {
+          id: docRef.id,
+          name,
+          default_color,
+          order,
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('BookmarkZone 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: string, updates: Partial<BookmarkZone>): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.BOOKMARK_ZONES, id);
+        await updateDoc(docRef, updates as any);
+      } catch (error) {
+        console.error('BookmarkZone 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    initializeDefaults: async (): Promise<void> => {
+      try {
+        const existing = await firestoreDb.bookmarkZones.list();
+        if (existing.length === 0) {
+          const batch = writeBatch(db);
+          DEFAULT_ZONES.forEach(zone => {
+            const newDocRef = doc(collection(db, COLLECTIONS.BOOKMARK_ZONES));
+            batch.set(newDocRef, {
+              ...zone,
+              created_at: now(),
+            });
+          });
+          await batch.commit();
+        }
+      } catch (error) {
+        console.error('Default zones 초기화 실패:', error);
+      }
+    },
+  },
+
+  bookmarks: {
+    list: async (): Promise<Bookmark[]> => {
+      try {
+        const q = query(collection(db, COLLECTIONS.BOOKMARKS));
+        const snapshot = await getDocs(q);
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as Bookmark))
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      } catch (error) {
+        console.error('Bookmarks 조회 실패:', error);
+        return [];
+      }
+    },
+
+    listByZone: async (zoneId: string): Promise<Bookmark[]> => {
+      try {
+        const q = query(
+          collection(db, COLLECTIONS.BOOKMARKS),
+          where('zone_id', '==', zoneId)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as Bookmark))
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      } catch (error) {
+        console.error('Zone bookmarks 조회 실패:', error);
+        return [];
+      }
+    },
+
+    create: async (zoneId: string, name: string, url: string, color: string): Promise<Bookmark> => {
+      try {
+        const siblings = await firestoreDb.bookmarks.listByZone(zoneId);
+        const maxOrder = siblings.reduce((max, b) => Math.max(max, b.order ?? 0), -1);
+
+        const docRef = await addDoc(collection(db, COLLECTIONS.BOOKMARKS), {
+          zone_id: zoneId,
+          name,
+          url,
+          color,
+          order: maxOrder + 1,
+          created_at: now(),
+        });
+
+        return {
+          id: docRef.id,
+          zone_id: zoneId,
+          name,
+          url,
+          color,
+          order: maxOrder + 1,
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('Bookmark 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: string, updates: Partial<Bookmark>): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.BOOKMARKS, id);
+        const updateData = { ...updates };
+        await updateDoc(docRef, updateData as any);
+      } catch (error) {
+        console.error('Bookmark 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.BOOKMARKS, id));
+      } catch (error) {
+        console.error('Bookmark 삭제 실패:', error);
         throw error;
       }
     },

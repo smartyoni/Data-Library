@@ -16,7 +16,8 @@
       "Bash(npm install:*)",
       "Bash(npm run deploy:*)",
       "Bash(npm run dev:*)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(cat:*)"
     ]
   }
 }

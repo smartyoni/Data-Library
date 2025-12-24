@@ -31,5 +31,23 @@ export interface ChecklistItem {
   created_at: string;
 }
 
+export interface BookmarkZone {
+  id: string;
+  name: string;
+  default_color: string;
+  order: number;
+  created_at: string;
+}
+
+export interface Bookmark {
+  id: string;
+  zone_id: string;
+  name: string;
+  url: string;
+  color: string;
+  order: number;
+  created_at: string;
+}
+
 // Helper types for UI state
 export type ViewState = 'loading' | 'ready' | 'error';
