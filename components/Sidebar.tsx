@@ -29,6 +29,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newCatName, setNewCatName] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
 
   // Initialize theme based on current DOM state
@@ -57,6 +59,22 @@ const Sidebar: React.FC<SidebarProps> = ({
     onAddCategory(newCatName);
     setNewCatName('');
     setIsAdding(false);
+  };
+
+  const handleEditCategory = (e: React.MouseEvent, id: string, currentName: string) => {
+    e.stopPropagation();
+    setEditingCategoryId(id);
+    setEditingCategoryName(currentName);
+  };
+
+  const handleSaveCategory = async (id: string) => {
+    if (!editingCategoryName.trim()) {
+        setEditingCategoryId(null);
+        return;
+    }
+    await firestoreDb.categories.update(id, editingCategoryName);
+    onRefresh();
+    setEditingCategoryId(null);
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -123,6 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}
+            onDoubleClick={(e) => handleEditCategory(e, cat.id, cat.name)}
             className={`group flex items-center justify-between px-4 py-3 md:py-2.5 rounded-lg cursor-pointer transition-all ${
               selectedCategoryId === cat.id
                 ? 'bg-accent/10 text-accent border border-accent/20'
@@ -131,20 +150,39 @@ const Sidebar: React.FC<SidebarProps> = ({
           >
             <div className="flex items-center gap-3 overflow-hidden">
               <Icons.Folder className={`w-5 h-5 md:w-4 md:h-4 flex-shrink-0 ${selectedCategoryId === cat.id ? 'fill-accent/20' : ''}`} />
-              <span className="text-base md:text-sm font-medium truncate">{cat.name}</span>
+              {editingCategoryId === cat.id ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={editingCategoryName}
+                  onChange={(e) => setEditingCategoryName(e.target.value)}
+                  onBlur={() => handleSaveCategory(cat.id)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') handleSaveCategory(cat.id);
+                    if (e.key === 'Escape') setEditingCategoryId(null);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 bg-zinc-950 border border-accent rounded px-1 py-0 text-sm text-white focus:outline-none"
+                />
+              ) : (
+                <span className="text-base md:text-sm font-medium truncate">{cat.name}</span>
+              )}
             </div>
-            
+
             {/* Show arrow on mobile to indicate navigation */}
-            <div className="flex items-center">
-              <Icons.ChevronRight className="w-4 h-4 text-zinc-600 md:hidden" />
-              <button
-                  type="button"
-                  onClick={(e) => handleDelete(e, cat.id)}
-                  className="hidden md:block opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded transition-all"
-              >
-                  <Icons.Trash className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {editingCategoryId !== cat.id && (
+              <div className="flex items-center">
+                <Icons.ChevronRight className="w-4 h-4 text-zinc-600 md:hidden" />
+                <button
+                    type="button"
+                    onClick={(e) => handleDelete(e, cat.id)}
+                    className="hidden md:block opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded transition-all"
+                >
+                    <Icons.Trash className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
 
