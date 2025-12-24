@@ -116,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded transition-colors"
+            className="p-1.5 text-amber-500 hover:text-white hover:bg-amber-500/20 rounded transition-colors"
             title="홈"
           >
             <Home className="w-5 h-5" />
