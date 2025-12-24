@@ -42,9 +42,9 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-surface rounded-xl border border-border overflow-hidden h-[400px] shadow-sm">
+    <div className="flex flex-col bg-surface rounded-xl border border-border overflow-hidden shadow-sm">
       {/* Header with Zone Name and Color */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-zinc-900/30 flex-shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-zinc-900/30 flex-shrink-0">
         {isEditingName ? (
           <input
             autoFocus
@@ -73,9 +73,9 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
       </div>
 
       {/* Bookmarks Grid (4 columns) */}
-      <div className="flex-1 overflow-y-auto p-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-0 custom-scrollbar">
         {bookmarks.length > 0 ? (
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-4 gap-0">
             {bookmarks.map((bookmark) => (
               <BookmarkCard
                 key={bookmark.id}
@@ -89,10 +89,10 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
             {bookmarks.length < 9 && (
               <button
                 onClick={onAddBookmark}
-                className="flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/20 hover:bg-zinc-900/40 transition-all aspect-square h-12 group"
+                className="flex items-center justify-center rounded-none border border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/20 hover:bg-zinc-900/40 transition-all aspect-square group"
                 title="북마크 추가"
               >
-                <Icons.Plus className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+                <Icons.Plus className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
               </button>
             )}
           </div>
