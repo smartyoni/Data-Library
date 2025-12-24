@@ -187,6 +187,7 @@ const BookmarkManager: React.FC<BookmarkManagerProps> = ({ onBack }) => {
           zones={zones}
           bookmark={editingBookmark}
           onSave={handleSaveBookmark}
+          onDelete={handleDeleteBookmark}
           onClose={() => {
             setIsModalOpen(false);
             setEditingBookmark(null);

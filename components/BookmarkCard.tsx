@@ -16,7 +16,7 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit, onDelete 
     }
   };
 
-  const handleEdit = (e: React.MouseEvent) => {
+  const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     onEdit(bookmark);
   };
@@ -26,10 +26,11 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit, onDelete 
       href={bookmark.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col items-center justify-center gap-0 p-0 rounded-none border-0 transition-all hover:opacity-90 aspect-square cursor-pointer relative"
+      className="flex flex-col items-center justify-center gap-0 p-0 rounded-none border-0 transition-all hover:opacity-90 aspect-square cursor-pointer relative"
       style={{
         backgroundColor: bookmark.color,
       }}
+      onContextMenu={handleContextMenu}
       title={`${bookmark.name}\n${bookmark.url}`}
     >
       {/* 버튼 내용 */}
@@ -37,24 +38,6 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit, onDelete 
         <span className="text-[10px] font-bold text-white text-center truncate w-full">
           {bookmark.name}
         </span>
-      </div>
-
-      {/* 호버 시 편집/삭제 버튼 (모바일에서는 항상 표시) */}
-      <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 md:opacity-100 flex gap-0 transition-opacity">
-        <button
-          onClick={handleEdit}
-          className="p-0.5 rounded-none bg-black/60 text-zinc-200 hover:bg-blue-500/80 hover:text-white transition-colors"
-          title="수정"
-        >
-          <Icons.Settings className="w-2 h-2" />
-        </button>
-        <button
-          onClick={handleDelete}
-          className="p-0.5 rounded-none bg-black/60 text-zinc-200 hover:bg-red-500/80 hover:text-white transition-colors"
-          title="삭제"
-        >
-          <Icons.Trash className="w-2 h-2" />
-        </button>
       </div>
     </a>
   );

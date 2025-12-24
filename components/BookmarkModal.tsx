@@ -6,6 +6,7 @@ interface BookmarkModalProps {
   zones: BookmarkZone[];
   bookmark: Bookmark | null;
   onSave: (data: Partial<Bookmark> & { zone_id: string }) => void;
+  onDelete?: (id: string) => void;
   onClose: () => void;
 }
 
@@ -13,6 +14,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   zones,
   bookmark,
   onSave,
+  onDelete,
   onClose,
 }) => {
   const [name, setName] = useState('');
@@ -108,89 +110,110 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-surface rounded-lg shadow-lg max-w-md w-full"
+        className="bg-surface rounded-lg shadow-lg w-full max-w-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-white">
+        {/* Header with Title and Buttons */}
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <h2 className="text-base font-semibold text-white">
             {bookmark ? '북마크 수정' : '북마크 추가'}
           </h2>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {/* Name Input */}
-          <div>
-            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-              이름
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="북마크 이름"
-              className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-all"
-            />
-          </div>
-
-          {/* URL Input */}
-          <div>
-            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-              URL
-            </label>
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-all"
-            />
-          </div>
-
-          {/* Zone Dropdown */}
-          <div>
-            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-              영역
-            </label>
-            <select
-              value={selectedZoneId}
-              onChange={handleZoneChange}
-              className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-all"
+          <div className="flex gap-2">
+            {bookmark && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`'${bookmark.name}' 북마크를 삭제하시겠습니까?`)) {
+                    onDelete?.(bookmark.id);
+                    onClose();
+                  }
+                }}
+                className="px-3 py-1.5 rounded bg-red-500/90 text-white hover:bg-red-600 transition-colors text-xs font-medium"
+              >
+                삭제
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              className="px-3 py-1.5 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors text-xs font-bold"
             >
-              {zones.map((zone) => (
-                <option key={zone.id} value={zone.id}>
-                  {zone.name}
-                </option>
-              ))}
-            </select>
+              {bookmark ? '수정' : '저장'}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-xs font-medium"
+            >
+              취소
+            </button>
           </div>
-
-          {/* Color Picker */}
-          <ColorPicker selectedColor={color} onChange={setColor} />
-
-          {/* Error Message */}
-          {error && (
-            <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400">
-              {error}
-            </div>
-          )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex gap-2 justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 transition-colors text-sm font-medium"
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors text-sm font-medium"
-          >
-            {bookmark ? '수정' : '추가'}
-          </button>
+        {/* Content - Two Column Layout */}
+        <div className="p-6 flex gap-6">
+          {/* Left Column - Form Inputs */}
+          <div className="flex-1 space-y-4">
+            {/* Name Input */}
+            <div>
+              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 block">
+                이름
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="북마크 이름"
+                className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-all"
+              />
+            </div>
+
+            {/* URL Input */}
+            <div>
+              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 block">
+                URL
+              </label>
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-all"
+              />
+            </div>
+
+            {/* Zone Dropdown */}
+            <div>
+              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 block">
+                영역
+              </label>
+              <select
+                value={selectedZoneId}
+                onChange={handleZoneChange}
+                className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent transition-all"
+              >
+                {zones.map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Color Picker */}
+          <div className="flex flex-col items-center gap-4">
+            <div>
+              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 block text-center">
+                색상
+              </label>
+              <ColorPicker selectedColor={color} onChange={setColor} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
