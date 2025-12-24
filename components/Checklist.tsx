@@ -13,6 +13,9 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [loading, setLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemText, setEditingItemText] = useState('');
+  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const fetchItems = async () => {
     const data = await firestoreDb.checklist.listByItem(itemId);
@@ -66,6 +69,36 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
     await firestoreDb.checklist.delete(id);
   };
 
+  const handleStartEdit = (id: string, currentText: string) => {
+    setEditingItemId(id);
+    setEditingItemText(currentText);
+  };
+
+  const handleSaveItemText = async (id: string) => {
+    if (editingItemText !== items.find(i => i.id === id)?.text) {
+      await handleUpdate(id, { text: editingItemText });
+    }
+    setEditingItemId(null);
+  };
+
+  const handleTextDoubleClick = (id: string, currentText: string) => {
+    handleStartEdit(id, currentText);
+  };
+
+  // Long press handlers for mobile
+  const handleTouchStart = (id: string, currentText: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      handleStartEdit(id, currentText);
+    }, 300);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
   if (loading) return <div className="text-secondary text-sm">로딩 중...</div>;
 
   return (
@@ -107,15 +140,31 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             </div>
             
             <div className="flex-1 min-w-0">
-              <input 
-                type="text"
-                value={item.text}
-                onChange={(e) => handleUpdate(item.id, { text: e.target.value })}
-                placeholder="할 일을 입력하세요..."
-                className={`w-full bg-transparent border-none p-0 text-sm focus:ring-0 placeholder-zinc-600 ${
-                  item.is_checked ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-200'
-                }`}
-              />
+              {editingItemId === item.id ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={editingItemText}
+                  onChange={(e) => setEditingItemText(e.target.value)}
+                  onBlur={() => handleSaveItemText(item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveItemText(item.id);
+                    if (e.key === 'Escape') setEditingItemId(null);
+                  }}
+                  className="w-full bg-zinc-950 border border-accent rounded px-1 py-0 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+              ) : (
+                <div
+                  onDoubleClick={() => handleTextDoubleClick(item.id, item.text)}
+                  onTouchStart={() => handleTouchStart(item.id, item.text)}
+                  onTouchEnd={handleTouchEnd}
+                  className={`w-full p-0 text-sm cursor-text select-none ${
+                    item.is_checked ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-200'
+                  }`}
+                >
+                  {item.text || '할 일을 입력하세요...'}
+                </div>
+              )}
               
               {item.memo && (
                 editingMemoId === item.id ? (
