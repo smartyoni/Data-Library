@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Category } from '../types';
 import { Icons } from './ui/Icons';
-import { db } from '../services/mockDb';
+import firestoreDb from '../services/firestoreDb';
 import { Lock, Unlock } from 'lucide-react';
 
 interface SidebarProps {
@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm('카테고리와 하위 항목이 모두 삭제됩니다. 계속하시겠습니까?')) {
-        await db.categories.delete(id);
+        await firestoreDb.categories.delete(id);
         onRefresh();
         if (selectedCategoryId === id) onSelectCategory('');
     }

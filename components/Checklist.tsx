@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from './ui/Icons';
 import { ChecklistItem } from '../types';
-import { db } from '../services/mockDb';
+import firestoreDb from '../services/firestoreDb';
 
 interface ChecklistProps {
   itemId: string;
@@ -15,7 +15,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
 
   const fetchItems = async () => {
-    const data = await db.checklist.listByItem(itemId);
+    const data = await firestoreDb.checklist.listByItem(itemId);
     setItems(data);
     setLoading(false);
   };
@@ -29,17 +29,17 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
     if (!newItemText.trim()) return;
 
     // 1. Create entry in DB (returns empty item)
-    const newItem = await db.checklist.create(itemId);
-    
+    const newItem = await firestoreDb.checklist.create(itemId);
+
     // 2. Optimistically update local state with text
     const itemWithText = { ...newItem, text: newItemText };
     setItems(prev => [...prev, itemWithText]);
-    
+
     // 3. Clear input
     setNewItemText('');
 
     // 4. Update DB with text
-    await db.checklist.update({ id: newItem.id, text: itemWithText.text });
+    await firestoreDb.checklist.update({ id: newItem.id, text: itemWithText.text });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -52,7 +52,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const handleUpdate = async (id: string, updates: Partial<ChecklistItem>) => {
     // Optimistic update
     setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
-    await db.checklist.update({ id, ...updates });
+    await firestoreDb.checklist.update({ id, ...updates });
   };
 
   const handleMemoSave = (id: string, text: string) => {
@@ -63,7 +63,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const handleDelete = async (id: string) => {
     if(!window.confirm('이 항목을 삭제하시겠습니까?')) return;
     setItems(prev => prev.filter(i => i.id !== id));
-    await db.checklist.delete(id);
+    await firestoreDb.checklist.delete(id);
   };
 
   if (loading) return <div className="text-secondary text-sm">로딩 중...</div>;

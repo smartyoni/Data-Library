@@ -1,0 +1,385 @@
+import { db } from './firebase';
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  getDocs,
+  writeBatch,
+  serverTimestamp,
+  Timestamp,
+  QueryConstraint,
+} from 'firebase/firestore';
+import { Category, Item, ChecklistItem, Workspace } from '../types';
+
+// Helper to generate IDs
+const generateId = () => crypto.randomUUID();
+const now = () => new Date().toISOString();
+
+// Collection names
+const COLLECTIONS = {
+  WORKSPACES: 'workspaces',
+  CATEGORIES: 'categories',
+  ITEMS: 'items',
+  CHECKLISTS: 'checklists',
+};
+
+/**
+ * Firestore 기반 데이터베이스 서비스
+ * mockDb.ts와 동일한 API를 제공합니다.
+ */
+export const firestoreDb = {
+  workspaces: {
+    list: async (): Promise<Workspace[]> => {
+      try {
+        const q = query(collection(db, COLLECTIONS.WORKSPACES));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as Workspace));
+      } catch (error) {
+        console.error('Workspaces 조회 실패:', error);
+        return [];
+      }
+    },
+
+    create: async (name: string): Promise<Workspace> => {
+      try {
+        const docRef = await addDoc(collection(db, COLLECTIONS.WORKSPACES), {
+          name,
+          is_locked: false,
+          created_at: now(),
+        });
+        return {
+          id: docRef.id,
+          name,
+          is_locked: false,
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('Workspace 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: string, updates: Partial<Workspace>): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.WORKSPACES, id);
+        await updateDoc(docRef, updates as any);
+      } catch (error) {
+        console.error('Workspace 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+
+        // 1. Get all categories for this workspace
+        const catsQuery = query(
+          collection(db, COLLECTIONS.CATEGORIES),
+          where('workspace_id', '==', id)
+        );
+        const catsSnapshot = await getDocs(catsQuery);
+        const catIds = catsSnapshot.docs.map(doc => doc.id);
+
+        // 2. Get all items for these categories
+        const itemsQuery = query(
+          collection(db, COLLECTIONS.ITEMS),
+          where('category_id', 'in', catIds.length > 0 ? catIds : ['__placeholder__'])
+        );
+        const itemsSnapshot = await getDocs(itemsQuery);
+        const itemIds = itemsSnapshot.docs.map(doc => doc.id);
+
+        // 3. Delete checklists for these items
+        const checklistsQuery = query(
+          collection(db, COLLECTIONS.CHECKLISTS),
+          where('item_id', 'in', itemIds.length > 0 ? itemIds : ['__placeholder__'])
+        );
+        const checklistsSnapshot = await getDocs(checklistsQuery);
+        checklistsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        // 4. Delete items
+        itemsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        // 5. Delete categories
+        catsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        // 6. Delete workspace
+        batch.delete(doc(db, COLLECTIONS.WORKSPACES, id));
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Workspace 삭제 실패:', error);
+        throw error;
+      }
+    },
+  },
+
+  categories: {
+    listByWorkspace: async (workspaceId: string): Promise<Category[]> => {
+      try {
+        const q = query(
+          collection(db, COLLECTIONS.CATEGORIES),
+          where('workspace_id', '==', workspaceId)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as Category))
+          .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      } catch (error) {
+        console.error('Categories 조회 실패:', error);
+        return [];
+      }
+    },
+
+    create: async (workspaceId: string, name: string): Promise<Category> => {
+      try {
+        const docRef = await addDoc(collection(db, COLLECTIONS.CATEGORIES), {
+          workspace_id: workspaceId,
+          name,
+          created_at: now(),
+        });
+        return {
+          id: docRef.id,
+          workspace_id: workspaceId,
+          name,
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('Category 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    update: async (id: string, name: string): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.CATEGORIES, id);
+        await updateDoc(docRef, { name });
+      } catch (error) {
+        console.error('Category 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+
+        // Get all items for this category
+        const itemsQuery = query(
+          collection(db, COLLECTIONS.ITEMS),
+          where('category_id', '==', id)
+        );
+        const itemsSnapshot = await getDocs(itemsQuery);
+        const itemIds = itemsSnapshot.docs.map(doc => doc.id);
+
+        // Delete checklists for these items
+        if (itemIds.length > 0) {
+          const checklistsQuery = query(
+            collection(db, COLLECTIONS.CHECKLISTS),
+            where('item_id', 'in', itemIds)
+          );
+          const checklistsSnapshot = await getDocs(checklistsQuery);
+          checklistsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        }
+
+        // Delete items
+        itemsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        // Delete category
+        batch.delete(doc(db, COLLECTIONS.CATEGORIES, id));
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Category 삭제 실패:', error);
+        throw error;
+      }
+    },
+  },
+
+  items: {
+    listByCategory: async (categoryId: string): Promise<Item[]> => {
+      try {
+        const q = query(
+          collection(db, COLLECTIONS.ITEMS),
+          where('category_id', '==', categoryId)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as Item))
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      } catch (error) {
+        console.error('Items 조회 실패:', error);
+        return [];
+      }
+    },
+
+    create: async (categoryId: string): Promise<Item> => {
+      try {
+        // Get siblings to determine order
+        const q = query(
+          collection(db, COLLECTIONS.ITEMS),
+          where('category_id', '==', categoryId)
+        );
+        const snapshot = await getDocs(q);
+        const siblings = snapshot.docs.map(doc => doc.data() as Item);
+        const maxOrder = siblings.reduce((max, item) => Math.max(max, item.order ?? 0), -1);
+
+        const docRef = await addDoc(collection(db, COLLECTIONS.ITEMS), {
+          category_id: categoryId,
+          title: '새 항목',
+          description: '',
+          order: maxOrder + 1,
+          created_at: now(),
+        });
+
+        return {
+          id: docRef.id,
+          category_id: categoryId,
+          title: '새 항목',
+          description: '',
+          order: maxOrder + 1,
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('Item 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    update: async (item: Partial<Item> & { id: string }): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.ITEMS, item.id);
+        const updateData = { ...item };
+        delete updateData.id;
+        await updateDoc(docRef, updateData as any);
+      } catch (error) {
+        console.error('Item 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    reorder: async (categoryId: string, orderedItemIds: string[]): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+        const q = query(
+          collection(db, COLLECTIONS.ITEMS),
+          where('category_id', '==', categoryId)
+        );
+        const snapshot = await getDocs(q);
+
+        snapshot.docs.forEach((docSnap) => {
+          const newIndex = orderedItemIds.indexOf(docSnap.id);
+          if (newIndex !== -1) {
+            batch.update(docSnap.ref, { order: newIndex });
+          }
+        });
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Item 정렬 실패:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+
+        // Delete checklists for this item
+        const checklistsQuery = query(
+          collection(db, COLLECTIONS.CHECKLISTS),
+          where('item_id', '==', id)
+        );
+        const checklistsSnapshot = await getDocs(checklistsQuery);
+        checklistsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        // Delete item
+        batch.delete(doc(db, COLLECTIONS.ITEMS, id));
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Item 삭제 실패:', error);
+        throw error;
+      }
+    },
+  },
+
+  checklist: {
+    listByItem: async (itemId: string): Promise<ChecklistItem[]> => {
+      try {
+        const q = query(
+          collection(db, COLLECTIONS.CHECKLISTS),
+          where('item_id', '==', itemId)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as ChecklistItem));
+      } catch (error) {
+        console.error('Checklists 조회 실패:', error);
+        return [];
+      }
+    },
+
+    create: async (itemId: string): Promise<ChecklistItem> => {
+      try {
+        const docRef = await addDoc(collection(db, COLLECTIONS.CHECKLISTS), {
+          item_id: itemId,
+          text: '',
+          is_checked: false,
+          memo: '',
+          created_at: now(),
+        });
+
+        return {
+          id: docRef.id,
+          item_id: itemId,
+          text: '',
+          is_checked: false,
+          memo: '',
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('Checklist 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    update: async (check: Partial<ChecklistItem> & { id: string }): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.CHECKLISTS, check.id);
+        const updateData = { ...check };
+        delete updateData.id;
+        await updateDoc(docRef, updateData as any);
+      } catch (error) {
+        console.error('Checklist 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.CHECKLISTS, id));
+      } catch (error) {
+        console.error('Checklist 삭제 실패:', error);
+        throw error;
+      }
+    },
+  },
+};
+
+export default firestoreDb;

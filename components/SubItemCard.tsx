@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Icons } from './ui/Icons';
 import { Item, ChecklistItem } from '../types';
 import Checklist from './Checklist';
-import { db } from '../services/mockDb';
+import firestoreDb from '../services/firestoreDb';
 
 interface SubItemCardProps {
   item: Item;
@@ -19,7 +19,7 @@ const SubItemCard: React.FC<SubItemCardProps> = ({ item, onDelete, onOpenMemo })
   const handleSaveTitle = async () => {
     if (title !== item.title) {
         setIsSaving(true);
-        await db.items.update({ id: item.id, title });
+        await firestoreDb.items.update({ id: item.id, title });
         setIsSaving(false);
     }
   };
@@ -27,7 +27,7 @@ const SubItemCard: React.FC<SubItemCardProps> = ({ item, onDelete, onOpenMemo })
   const handleSaveDescription = async () => {
     if (description !== item.description) {
         setIsSaving(true);
-        await db.items.update({ id: item.id, description });
+        await firestoreDb.items.update({ id: item.id, description });
         setIsSaving(false);
     }
   };

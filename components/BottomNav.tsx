@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Workspace } from '../types';
 import { Icons } from './ui/Icons';
-import { db } from '../services/mockDb';
+import firestoreDb from '../services/firestoreDb';
 import { Lock } from 'lucide-react';
 
 interface BottomNavProps {
@@ -16,7 +16,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ workspaces, activeWorkspaceId, on
   const [editName, setEditName] = useState('');
 
   const handleCreate = async () => {
-    const newWs = await db.workspaces.create(`새 작업공간 ${workspaces.length + 1}`);
+    const newWs = await firestoreDb.workspaces.create(`새 작업공간 ${workspaces.length + 1}`);
     onUpdate();
     onSwitch(newWs.id);
   };
@@ -29,7 +29,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ workspaces, activeWorkspaceId, on
 
   const saveEdit = async () => {
     if (editingId && editName.trim()) {
-      await db.workspaces.update(editingId, { name: editName });
+      await firestoreDb.workspaces.update(editingId, { name: editName });
       onUpdate();
     }
     setEditingId(null);

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import WorkspaceView from './components/WorkspaceView';
 import BottomNav from './components/BottomNav';
 import { Workspace } from './types';
-import { db } from './services/mockDb';
+import firestoreDb from './services/firestoreDb';
 
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -10,7 +10,7 @@ const App: React.FC = () => {
 
   // Load workspaces with useCallback so it can be called externally
   const loadWorkspaces = useCallback(async () => {
-    const data = await db.workspaces.list();
+    const data = await firestoreDb.workspaces.list();
     setWorkspaces(data);
   }, []);
 
@@ -36,12 +36,12 @@ const App: React.FC = () => {
   }, [workspaces, activeWorkspaceId]);
 
   const handleDeleteWorkspace = useCallback(async (id: string) => {
-    await db.workspaces.delete(id);
+    await firestoreDb.workspaces.delete(id);
     await loadWorkspaces();
   }, [loadWorkspaces]);
 
   const handleUpdateWorkspace = useCallback(async (id: string, updates: Partial<Workspace>) => {
-    await db.workspaces.update(id, updates);
+    await firestoreDb.workspaces.update(id, updates);
     // Update local state directly for faster UX
     setWorkspaces(prev =>
       prev.map(ws => ws.id === id ? { ...ws, ...updates } : ws)

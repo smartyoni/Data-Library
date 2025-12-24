@@ -4,7 +4,7 @@ import ItemsList from './ItemsList';
 import ItemDetail from './ItemDetail';
 import MemoModal from './MemoModal';
 import { Category, Item, ChecklistItem, Workspace } from '../types';
-import { db } from '../services/mockDb';
+import firestoreDb from '../services/firestoreDb';
 import { Icons } from './ui/Icons';
 
 interface WorkspaceViewProps {
@@ -45,7 +45,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
   }, [selectedCategoryId]);
 
   const loadCategories = async () => {
-    const data = await db.categories.listByWorkspace(workspace.id);
+    const data = await firestoreDb.categories.listByWorkspace(workspace.id);
     setCategories(data);
     // On mobile, we don't auto-select. On desktop, we could, but let's keep it consistent or simple.
     // If we want desktop to auto-select, we need to check screen size or just default to null for a cleaner "empty state".
@@ -54,26 +54,26 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
 
   const loadItems = async (catId: string) => {
     setLoadingItems(true);
-    const data = await db.items.listByCategory(catId);
+    const data = await firestoreDb.items.listByCategory(catId);
     setItems(data);
     setLoadingItems(false);
   };
 
   const handleAddCategory = async (name: string) => {
-    const newCat = await db.categories.create(workspace.id, name);
+    const newCat = await firestoreDb.categories.create(workspace.id, name);
     await loadCategories();
     setSelectedCategoryId(newCat.id);
   }
 
   const handleAddItem = async () => {
     if (!selectedCategoryId) return;
-    const newItem = await db.items.create(selectedCategoryId);
+    const newItem = await firestoreDb.items.create(selectedCategoryId);
     setItems([...items, newItem]);
     setSelectedItemId(newItem.id);
   };
 
   const handleDeleteItem = async (id: string) => {
-    await db.items.delete(id);
+    await firestoreDb.items.delete(id);
     setItems(prev => prev.filter(i => i.id !== id));
     if (selectedItemId === id) setSelectedItemId(null);
   };
@@ -82,7 +82,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
      // Optimistically update local state
      setItems(newOrder);
      if (selectedCategoryId) {
-         await db.items.reorder(selectedCategoryId, newOrder.map(i => i.id));
+         await firestoreDb.items.reorder(selectedCategoryId, newOrder.map(i => i.id));
      }
   };
 
@@ -96,8 +96,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
   };
 
   const saveMemo = async (id: string, text: string) => {
-    await db.checklist.update({ id, memo: text });
-    if(selectedItem) setSelectedItemId(selectedItem.id); 
+    await firestoreDb.checklist.update({ id, memo: text });
+    if(selectedItem) setSelectedItemId(selectedItem.id);
   };
 
   const handleDeleteWorkspace = () => {
