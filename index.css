@@ -101,8 +101,16 @@ body {
 }
 
 /* Light Mode Gray to Indigo Blue Conversions */
+.light-mode .bg-zinc-950\/50 {
+  background-color: rgba(79, 70, 229, 0.15) !important;
+}
+
 .light-mode .bg-zinc-900\/50 {
   background-color: rgba(79, 70, 229, 0.1) !important;
+}
+
+.light-mode .bg-zinc-900\/30 {
+  background-color: rgba(79, 70, 229, 0.08) !important;
 }
 
 .light-mode .bg-zinc-900 {
