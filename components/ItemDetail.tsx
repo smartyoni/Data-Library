@@ -243,7 +243,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
                 <>
                   <button
                     onClick={() => setIsPreviewOpen(false)}
-                    className="px-4 py-2 rounded bg-success text-white hover:bg-success/90 transition-colors text-sm"
+                    className="px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600 transition-colors text-sm"
                   >
                     닫기
                   </button>
