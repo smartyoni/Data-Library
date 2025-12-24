@@ -152,7 +152,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
                    onDoubleClick={handleDescriptionDoubleClick}
                    onTouchStart={handleTouchStart}
                    onTouchEnd={handleTouchEnd}
-                   className="flex-1 w-full p-4 text-sm text-zinc-300 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar cursor-text select-none hover:bg-white/5 transition-colors"
+                   className="flex-1 w-full p-4 text-sm text-zinc-300 overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar cursor-text hover:bg-white/5 transition-colors"
                    title="더블클릭하거나 길게눌러 수정"
                  >
                    {description ? (

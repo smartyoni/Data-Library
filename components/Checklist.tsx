@@ -158,7 +158,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                   onDoubleClick={() => handleTextDoubleClick(item.id, item.text)}
                   onTouchStart={() => handleTouchStart(item.id, item.text)}
                   onTouchEnd={handleTouchEnd}
-                  className={`w-full p-0 text-sm cursor-text select-none ${
+                  className={`w-full p-0 text-sm cursor-text ${
                     item.is_checked ? 'text-black line-through decoration-black' : 'text-zinc-200'
                   }`}
                 >
