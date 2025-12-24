@@ -26,7 +26,7 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit, onDelete 
       href={bookmark.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col items-center justify-center gap-2 p-2 rounded-lg border-2 transition-all hover:scale-105 aspect-square h-12 cursor-pointer relative"
+      className="group flex flex-col items-center justify-center gap-1 p-1 rounded-lg border-2 transition-all hover:scale-105 aspect-square h-12 cursor-pointer relative"
       style={{
         backgroundColor: `${bookmark.color}15`,
         borderColor: bookmark.color,
