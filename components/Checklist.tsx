@@ -159,7 +159,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                   onTouchStart={() => handleTouchStart(item.id, item.text)}
                   onTouchEnd={handleTouchEnd}
                   className={`w-full p-0 text-sm cursor-text select-none ${
-                    item.is_checked ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-200'
+                    item.is_checked ? 'text-yellow-300 line-through decoration-yellow-300' : 'text-zinc-200'
                   }`}
                 >
                   {item.text || '할 일을 입력하세요...'}
