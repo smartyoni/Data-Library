@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import ItemsList from './ItemsList';
 import ItemDetail from './ItemDetail';
+import BookmarkManager from './BookmarkManager';
 import MemoModal from './MemoModal';
 import { Category, Item, ChecklistItem, Workspace } from '../types';
 import firestoreDb from '../services/firestoreDb';
@@ -12,9 +13,18 @@ interface WorkspaceViewProps {
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Workspace>) => void;
   onShowBookmarks: () => void;
+  showBookmarks?: boolean;
+  onCloseBookmarks?: () => void;
 }
 
-const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUpdate, onShowBookmarks }) => {
+const WorkspaceView: React.FC<WorkspaceViewProps> = ({
+  workspace,
+  onDelete,
+  onUpdate,
+  onShowBookmarks,
+  showBookmarks = false,
+  onCloseBookmarks,
+}) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -39,11 +49,15 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
     if (selectedCategoryId) {
       loadItems(selectedCategoryId);
       setSelectedItemId(null);
+      // Close bookmark manager when category is selected
+      if (showBookmarks && onCloseBookmarks) {
+        onCloseBookmarks();
+      }
     } else {
       setItems([]);
       setSelectedItemId(null);
     }
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, showBookmarks, onCloseBookmarks]);
 
   const loadCategories = async () => {
     const data = await firestoreDb.categories.listByWorkspace(workspace.id);
@@ -171,11 +185,13 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({ workspace, onDelete, onUp
         )}
       </div>
 
-      {/* Column 3: Item Detail */}
+      {/* Column 3: Item Detail or Bookmark Manager */}
       {/* Mobile: Visible if item selected. Desktop: Always visible (flex-1) */}
-      <div className={`${selectedItemId ? 'flex' : 'hidden md:flex'} flex-1 flex-col h-full bg-background relative min-w-0`}>
-        {selectedItem ? (
-          <ItemDetail 
+      <div className={`${selectedItemId || showBookmarks ? 'flex' : 'hidden md:flex'} flex-1 flex-col h-full bg-background relative min-w-0`}>
+        {showBookmarks ? (
+          <BookmarkManager onBack={onCloseBookmarks || (() => {})} />
+        ) : selectedItem ? (
+          <ItemDetail
             key={selectedItem.id}
             item={selectedItem}
             onUpdateItem={handleUpdateItemLocal}

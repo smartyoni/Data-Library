@@ -57,16 +57,14 @@ const App: React.FC = () => {
       
       {/* Main Workspace Area (Flex Grow) */}
       <div className="flex-1 overflow-hidden relative">
-        {isBookmarkViewActive ? (
-          <BookmarkManager
-            onBack={() => setIsBookmarkViewActive(false)}
-          />
-        ) : activeWorkspace ? (
+        {activeWorkspace ? (
           <WorkspaceView
             workspace={activeWorkspace}
             onDelete={handleDeleteWorkspace}
             onUpdate={handleUpdateWorkspace}
             onShowBookmarks={() => setIsBookmarkViewActive(true)}
+            showBookmarks={isBookmarkViewActive}
+            onCloseBookmarks={() => setIsBookmarkViewActive(false)}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-500">
