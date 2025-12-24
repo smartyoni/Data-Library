@@ -14,7 +14,9 @@ import {
   ChevronDown,
   LayoutDashboard,
   GripVertical,
-  ArrowLeft
+  ArrowLeft,
+  Bookmark,
+  Link
 } from 'lucide-react';
 
 export const Icons = {
@@ -33,5 +35,7 @@ export const Icons = {
   ChevronDown,
   Dashboard: LayoutDashboard,
   DragHandle: GripVertical,
-  Back: ArrowLeft
+  Back: ArrowLeft,
+  Bookmark,
+  Link
 };

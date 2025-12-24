@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { BookmarkZone as BookmarkZoneType, Bookmark } from '../types';
 import { Icons } from './ui/Icons';
 import BookmarkCard from './BookmarkCard';
-import firestoreDb from '../services/firestoreDb';
 
 interface BookmarkZoneProps {
   zone: BookmarkZoneType;
