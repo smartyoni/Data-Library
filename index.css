@@ -100,6 +100,19 @@ body {
   color: #a1a1aa !important;
 }
 
+/* Light Mode Gray to Indigo Blue Conversions */
+.light-mode .bg-zinc-900\/50 {
+  background-color: rgba(79, 70, 229, 0.1) !important;
+}
+
+.light-mode .bg-zinc-900 {
+  background-color: rgba(79, 70, 229, 0.15) !important;
+}
+
+.light-mode .border-zinc-600 {
+  border-color: #4f46e5 !important;
+}
+
 /* Light Mode Accent Colors */
 .light-mode .text-accent {
   color: #4f46e5 !important;
