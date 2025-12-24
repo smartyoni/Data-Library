@@ -18,7 +18,6 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Sync state when item changes
   useEffect(() => {
@@ -26,26 +25,6 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
     setDescription(item.description);
     setIsEditingDesc(false);
   }, [item.id, item.title, item.description]);
-
-  // Auto-expand textarea height
-  const adjustTextareaHeight = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.max(textarea.scrollHeight, 200) + 'px';
-    }
-  };
-
-  useEffect(() => {
-    if (isEditingDesc) {
-      adjustTextareaHeight();
-    }
-  }, [isEditingDesc]);
-
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value);
-    adjustTextareaHeight();
-  };
 
   const handleSaveTitle = async () => {
     if (title !== item.title) {
@@ -160,13 +139,11 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
                
                {isEditingDesc ? (
                  <textarea
-                   ref={textareaRef}
                    autoFocus
                    value={description}
-                   onChange={handleDescriptionChange}
+                   onChange={(e) => setDescription(e.target.value)}
                    onBlur={handleSaveDescription}
-                   className="w-full bg-transparent border-none p-4 text-sm text-zinc-300 resize-vertical focus:ring-0 placeholder-zinc-700 leading-relaxed custom-scrollbar"
-                   style={{ minHeight: '200px', overflow: 'hidden' }}
+                   className="flex-1 w-full bg-transparent border-none p-4 text-sm text-zinc-300 resize-none focus:ring-0 placeholder-zinc-700 leading-relaxed custom-scrollbar"
                    placeholder="이 항목에 대한 상세한 내용을 자유롭게 작성하세요..."
                  />
                ) : (
