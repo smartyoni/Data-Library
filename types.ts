@@ -2,6 +2,7 @@ export interface Workspace {
   id: string;
   name: string;
   is_locked: boolean;
+  order: number;
   created_at: string;
 }
 

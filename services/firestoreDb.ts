@@ -37,10 +37,12 @@ export const firestoreDb = {
       try {
         const q = query(collection(db, COLLECTIONS.WORKSPACES));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Workspace));
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as Workspace))
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       } catch (error) {
         console.error('Workspaces 조회 실패:', error);
         return [];
@@ -49,15 +51,23 @@ export const firestoreDb = {
 
     create: async (name: string): Promise<Workspace> => {
       try {
+        // Get max order
+        const q = query(collection(db, COLLECTIONS.WORKSPACES));
+        const snapshot = await getDocs(q);
+        const workspaces = snapshot.docs.map(doc => doc.data() as Workspace);
+        const maxOrder = workspaces.reduce((max, ws) => Math.max(max, ws.order ?? 0), -1);
+
         const docRef = await addDoc(collection(db, COLLECTIONS.WORKSPACES), {
           name,
           is_locked: false,
+          order: maxOrder + 1,
           created_at: now(),
         });
         return {
           id: docRef.id,
           name,
           is_locked: false,
+          order: maxOrder + 1,
           created_at: now(),
         };
       } catch (error) {
@@ -116,6 +126,26 @@ export const firestoreDb = {
         await batch.commit();
       } catch (error) {
         console.error('Workspace 삭제 실패:', error);
+        throw error;
+      }
+    },
+
+    reorder: async (orderedWorkspaceIds: string[]): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+        const q = query(collection(db, COLLECTIONS.WORKSPACES));
+        const snapshot = await getDocs(q);
+
+        snapshot.docs.forEach((docSnap) => {
+          const newIndex = orderedWorkspaceIds.indexOf(docSnap.id);
+          if (newIndex !== -1) {
+            batch.update(docSnap.ref, { order: newIndex });
+          }
+        });
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Workspace 순서 변경 실패:', error);
         throw error;
       }
     },
