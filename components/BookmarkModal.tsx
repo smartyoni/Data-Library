@@ -5,6 +5,7 @@ import ColorPicker from './ColorPicker';
 interface BookmarkModalProps {
   zones: BookmarkZone[];
   bookmark: Bookmark | null;
+  defaultZoneId?: string;
   onSave: (data: Partial<Bookmark> & { zone_id: string }) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
@@ -13,6 +14,7 @@ interface BookmarkModalProps {
 const BookmarkModal: React.FC<BookmarkModalProps> = ({
   zones,
   bookmark,
+  defaultZoneId,
   onSave,
   onDelete,
   onClose,
@@ -25,7 +27,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
 
   useEffect(() => {
     if (zones.length > 0) {
-      const zoneId = bookmark?.zone_id || zones[0].id;
+      const zoneId = bookmark?.zone_id || defaultZoneId || zones[0].id;
       const defaultColor = zones.find(z => z.id === zoneId)?.default_color || '#ef4444';
 
       setSelectedZoneId(zoneId);
@@ -40,7 +42,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       setUrl('');
     }
     setError('');
-  }, [bookmark, zones]);
+  }, [bookmark, defaultZoneId, zones]);
 
   const handleZoneChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const zoneId = e.target.value;

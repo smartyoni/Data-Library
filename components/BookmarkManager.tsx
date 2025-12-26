@@ -186,6 +186,7 @@ const BookmarkManager: React.FC<BookmarkManagerProps> = ({ onBack }) => {
         <BookmarkModal
           zones={zones}
           bookmark={editingBookmark}
+          defaultZoneId={selectedZoneForAdd || undefined}
           onSave={handleSaveBookmark}
           onDelete={handleDeleteBookmark}
           onClose={() => {
