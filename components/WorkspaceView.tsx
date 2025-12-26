@@ -15,6 +15,12 @@ interface WorkspaceViewProps {
   onShowBookmarks: () => void;
   showBookmarks?: boolean;
   onCloseBookmarks?: () => void;
+  registerHandlers?: (handlers: {
+    selectedCategoryId: string | null;
+    selectedItemId: string | null;
+    handleBackToCategories: () => void;
+    handleBackToItems: () => void;
+  }) => void;
 }
 
 const WorkspaceView: React.FC<WorkspaceViewProps> = ({
@@ -24,6 +30,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   onShowBookmarks,
   showBookmarks = false,
   onCloseBookmarks,
+  registerHandlers,
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -135,6 +142,18 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   const handleBackToItems = () => {
     setSelectedItemId(null);
   };
+
+  // 하드웨어 뒤로가기 처리를 위해 App.tsx에 현재 상태 전달
+  useEffect(() => {
+    if (registerHandlers) {
+      registerHandlers({
+        selectedCategoryId,
+        selectedItemId,
+        handleBackToCategories,
+        handleBackToItems,
+      });
+    }
+  }, [selectedCategoryId, selectedItemId, registerHandlers]);
 
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
   const selectedItem = items.find(i => i.id === selectedItemId);

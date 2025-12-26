@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import WorkspaceView from './components/WorkspaceView';
 import BookmarkManager from './components/BookmarkManager';
 import BottomNav from './components/BottomNav';
@@ -6,10 +6,40 @@ import { Workspace } from './types';
 import firestoreDb from './services/firestoreDb';
 import { Icons } from './components/ui/Icons';
 
+// 모바일 기기 감지
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || window.matchMedia('(max-width: 768px)').matches;
+};
+
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [isBookmarkViewActive, setIsBookmarkViewActive] = useState(false);
+
+  // WorkspaceView 상태 추적 (하드웨어 뒤로가기 처리용)
+  const workspaceStateRef = useRef<{
+    selectedCategoryId: string | null;
+    selectedItemId: string | null;
+    handleBackToCategories: () => void;
+    handleBackToItems: () => void;
+  }>({
+    selectedCategoryId: null,
+    selectedItemId: null,
+    handleBackToCategories: () => {},
+    handleBackToItems: () => {},
+  });
+
+  // WorkspaceView에서 상태를 받기 위한 콜백
+  const registerWorkspaceHandlers = useCallback((handlers: {
+    selectedCategoryId: string | null;
+    selectedItemId: string | null;
+    handleBackToCategories: () => void;
+    handleBackToItems: () => void;
+  }) => {
+    workspaceStateRef.current = handlers;
+  }, []);
 
   // Load workspaces with useCallback so it can be called externally
   const loadWorkspaces = useCallback(async () => {
@@ -51,6 +81,47 @@ const App: React.FC = () => {
     );
   }, []);
 
+  // 하드웨어 뒤로가기 버튼 처리 (모바일 전용)
+  useEffect(() => {
+    if (!isMobileDevice()) return;
+
+    let isNavigating = false;
+
+    const handlePopState = () => {
+      if (isNavigating) return;
+      isNavigating = true;
+
+      const state = workspaceStateRef.current;
+
+      if (isBookmarkViewActive) {
+        setIsBookmarkViewActive(false);
+      } else if (state.selectedItemId) {
+        state.handleBackToItems();
+      } else if (state.selectedCategoryId) {
+        state.handleBackToCategories();
+      } else {
+        // 최상위 - 기본 동작 허용 (앱 종료)
+        isNavigating = false;
+        return;
+      }
+
+      // 뒤로가기 후 히스토리 재추가
+      setTimeout(() => {
+        history.pushState(null, '');
+        isNavigating = false;
+      }, 0);
+    };
+
+    // 초기 히스토리 엔트리
+    history.pushState(null, '');
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isBookmarkViewActive]);
+
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId);
 
   return (
@@ -66,6 +137,7 @@ const App: React.FC = () => {
             onShowBookmarks={() => setIsBookmarkViewActive(true)}
             showBookmarks={isBookmarkViewActive}
             onCloseBookmarks={() => setIsBookmarkViewActive(false)}
+            registerHandlers={registerWorkspaceHandlers}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-500">
