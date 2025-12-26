@@ -29,14 +29,14 @@ const COLLECTIONS = {
   BOOKMARKS: 'bookmarks',
 };
 
-// Default bookmark zones
+// Default bookmark zones - Notion style
 const DEFAULT_ZONES = [
-  { name: '영역1', default_color: '#c97e7e', order: 0 }, // Rose
-  { name: '영역2', default_color: '#d4a574', order: 1 }, // Caramel
-  { name: '영역3', default_color: '#d9c86b', order: 2 }, // Olive Gold
-  { name: '영역4', default_color: '#8cb89b', order: 3 }, // Celadon
-  { name: '영역5', default_color: '#8ab4d9', order: 4 }, // Slate Blue
-  { name: '영역6', default_color: '#c5a3d9', order: 5 }, // Mauve
+  { name: '영역1', default_color: '#FADCC4', order: 0 }, // Orange
+  { name: '영역2', default_color: '#FDF7DE', order: 1 }, // Yellow
+  { name: '영역3', default_color: '#F0F7E4', order: 2 }, // Green
+  { name: '영역4', default_color: '#DFEAFF', order: 3 }, // Blue
+  { name: '영역5', default_color: '#EBE5FA', order: 4 }, // Purple
+  { name: '영역6', default_color: '#F5DEEF', order: 5 }, // Pink
 ];
 
 /**

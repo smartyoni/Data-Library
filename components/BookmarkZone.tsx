@@ -12,24 +12,24 @@ interface BookmarkZoneProps {
   onDeleteBookmark: (id: string) => void;
 }
 
-// Color palette options
+// Color palette options - Notion style
 const COLOR_PALETTE = [
-  '#c97e7e', // Rose
-  '#d4a574', // Caramel
-  '#d9c86b', // Olive Gold
-  '#8cb89b', // Celadon
-  '#8ab4d9', // Slate Blue
-  '#c5a3d9', // Mauve
-  '#e8a8a8', // Soft Red
-  '#d9b8a3', // Warm Beige
-  '#d4d999', // Soft Green
-  '#9dbfa8', // Soft Teal
-  '#a8c5e0', // Sky Blue
-  '#d9aee0', // Soft Purple
-  '#b88e8e', // Dusty Rose
-  '#c4a589', // Caramel Brown
-  '#c9c589', // Muted Gold
-  '#88a8a8', // Muted Teal
+  '#F3F3F1', // Gray
+  '#FCEAE3', // Brown
+  '#FADCC4', // Orange
+  '#FDF7DE', // Yellow
+  '#F0F7E4', // Green
+  '#DDEDDA', // Sage
+  '#DFEAFF', // Blue
+  '#EBE5FA', // Purple
+  '#F5DEEF', // Pink
+  '#FDECED', // Red
+  '#F2F2F0', // Warm Gray
+  '#E8E0D5', // Taupe
+  '#F4EDDE', // Cream
+  '#E7F2EE', // Teal
+  '#E3E8FF', // Lavender
+  '#FFF0F0', // Light Red
 ];
 
 const BookmarkZone: React.FC<BookmarkZoneProps> = ({
