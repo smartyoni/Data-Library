@@ -4,7 +4,6 @@ import {
   connectFirestoreEmulator,
   enableIndexedDbPersistence,
 } from 'firebase/firestore';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
 
 // Firebase 설정
 const firebaseConfig = {
@@ -22,13 +21,9 @@ const app = initializeApp(firebaseConfig);
 // Firestore 초기화
 export const db = getFirestore(app);
 
-// Authentication 초기화
-export const auth = getAuth(app);
-
 // 개발 환경에서만 Firestore 로컬 에뮬레이터 연결 (선택사항)
 // if (process.env.NODE_ENV === 'development' && !location.hostname.includes('localhost')) {
 //   connectFirestoreEmulator(db, 'localhost', 8080);
-//   connectAuthEmulator(auth, 'http://localhost:9099');
 // }
 
 // 오프라인 지원 활성화 (IndexedDB 사용)
