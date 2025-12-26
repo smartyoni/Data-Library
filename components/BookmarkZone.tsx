@@ -133,7 +133,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
       </div>
 
       {/* Bookmarks Grid (4 columns) */}
-      <div className="flex-1 overflow-y-auto p-0 custom-scrollbar">
+      <div className="overflow-y-auto p-0 custom-scrollbar max-h-[240px]">
         {bookmarks.length > 0 ? (
           <div className="grid grid-cols-4 gap-0">
             {bookmarks.map((bookmark) => (
