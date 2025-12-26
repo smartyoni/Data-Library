@@ -7,36 +7,36 @@ interface ColorPickerProps {
 }
 
 const PRESET_COLORS = [
-  '#F3F3F1', // Gray
-  '#FCEAE3', // Brown
-  '#FADCC4', // Orange
-  '#FDF7DE', // Yellow
-  '#F0F7E4', // Green
-  '#DDEDDA', // Sage
-  '#DFEAFF', // Blue
-  '#EBE5FA', // Purple
-  '#F5DEEF', // Pink
-  '#FDECED', // Red
-  '#F2F2F0', // Warm Gray
-  '#E8E0D5', // Taupe
-  '#F4EDDE', // Cream
-  '#E7F2EE', // Teal
-  '#E3E8FF', // Lavender
-  '#FFF0F0', // Light Red
-  '#FCF0E4', // Light Orange
-  '#FFFAE6', // Light Yellow
-  '#F5FFF0', // Light Mint
-  '#E8F5F0', // Light Cyan
-  '#E8ECFF', // Light Periwinkle
-  '#F8E4F5', // Light Magenta
-  '#FFE8E8', // Light Coral
-  '#E4F0FF', // Light Sky Blue
-  '#F0E8FF', // Light Iris
-  '#FFF5E8', // Light Sand
-  '#E8FFF5', // Light Aqua
-  '#F5E8FF', // Light Grape
-  '#FFE8F5', // Light Rose
-  '#E8F8FF', // Light Ice
+  '#C0C0BD', // Gray
+  '#D9A891', // Brown
+  '#D99B71', // Orange
+  '#D9C659', // Yellow
+  '#C5E6A5', // Green
+  '#A8D5B8', // Sage
+  '#9CBFF5', // Blue
+  '#C9B3E6', // Purple
+  '#E6B3D9', // Pink
+  '#E67A7A', // Red
+  '#B8B8B3', // Warm Gray
+  '#C9B8A3', // Taupe
+  '#D9C9A3', // Cream
+  '#A3D9D1', // Teal
+  '#B3C9FF', // Lavender
+  '#FF8080', // Light Red
+  '#E8B8A3', // Light Orange
+  '#FFDE71', // Light Yellow
+  '#C9FF99', // Light Mint
+  '#99D9D1', // Light Cyan
+  '#B3D9FF', // Light Periwinkle
+  '#E6B3D9', // Light Magenta
+  '#FF9999', // Light Coral
+  '#99CCFF', // Light Sky Blue
+  '#D9B3FF', // Light Iris
+  '#FFCC99', // Light Sand
+  '#99FFD9', // Light Aqua
+  '#D9B3FF', // Light Grape
+  '#FFB3D9', // Light Rose
+  '#99E6FF', // Light Ice
 ];
 
 const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onChange, label = '색상' }) => {
