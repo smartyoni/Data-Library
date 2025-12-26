@@ -150,8 +150,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   return (
     <div className="flex h-full w-full bg-background text-zinc-100 font-sans selection:bg-accent/30 overflow-hidden relative">
       {/* Column 1: Categories */}
-      {/* Mobile: Hidden if category selected. Desktop: Always visible (w-64) */}
-      <div className={`${selectedCategoryId ? 'hidden md:flex' : 'flex'} w-full md:w-64 flex-col border-r border-border bg-surface`}>
+      {/* Mobile: Hidden if category selected or bookmarks shown. Desktop: Always visible (w-64) */}
+      <div className={`${selectedCategoryId || showBookmarks ? 'hidden md:flex' : 'flex'} w-full md:w-64 flex-col border-r border-border bg-surface`}>
         <Sidebar
           categories={categories}
           selectedCategoryId={selectedCategoryId}
@@ -167,8 +167,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
       </div>
 
       {/* Column 2: Items List */}
-      {/* Mobile: Visible if category selected & no item selected. Desktop: Visible if category selected (w-80) or placeholder */}
-      <div className={`${selectedCategoryId && !selectedItemId ? 'flex' : 'hidden md:flex'} ${selectedCategoryId ? 'w-full md:w-80' : 'hidden md:flex md:w-80'} flex-col border-r border-border bg-background`}>
+      {/* Mobile: Visible if category selected & no item selected & bookmarks not shown. Desktop: Visible if category selected (w-80) or placeholder */}
+      <div className={`${selectedCategoryId && !selectedItemId && !showBookmarks ? 'flex' : 'hidden md:flex'} ${selectedCategoryId ? 'w-full md:w-80' : 'hidden md:flex md:w-80'} flex-col border-r border-border bg-background`}>
         {selectedCategoryId ? (
           <ItemsList 
             categoryName={selectedCategory?.name}
