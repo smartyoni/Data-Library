@@ -214,17 +214,6 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
         )}
       </div>
 
-      {/* Mobile-only Floating Action Button for Bookmarks */}
-      {!showBookmarks && (
-        <button
-          onClick={onShowBookmarks}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-accent rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 transition-all z-40 border-2 border-white/10"
-          title="북마크 관리자"
-        >
-          <Icons.Home className="w-6 h-6 text-white" />
-        </button>
-      )}
-
       {/* Global Memo Modal */}
       <MemoModal
         isOpen={isMemoModalOpen}

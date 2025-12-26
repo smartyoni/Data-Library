@@ -4,6 +4,7 @@ import BookmarkManager from './components/BookmarkManager';
 import BottomNav from './components/BottomNav';
 import { Workspace } from './types';
 import firestoreDb from './services/firestoreDb';
+import { Icons } from './components/ui/Icons';
 
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -54,7 +55,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-black text-zinc-100 font-sans overflow-hidden">
-      
+
       {/* Main Workspace Area (Flex Grow) */}
       <div className="flex-1 overflow-hidden relative">
         {activeWorkspace ? (
@@ -73,8 +74,19 @@ const App: React.FC = () => {
         )}
       </div>
 
+      {/* Mobile-only Floating Action Button for Bookmarks */}
+      {activeWorkspace && !isBookmarkViewActive && (
+        <button
+          onClick={() => setIsBookmarkViewActive(true)}
+          className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-accent rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 transition-all z-50 border-2 border-white/10"
+          title="북마크 관리자"
+        >
+          <Icons.Home className="w-6 h-6 text-white" />
+        </button>
+      )}
+
       {/* Bottom Navigation (Fixed Footer) */}
-      <BottomNav 
+      <BottomNav
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
         onSwitch={setActiveWorkspaceId}
