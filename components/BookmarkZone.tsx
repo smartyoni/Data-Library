@@ -133,8 +133,10 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
                   <button
                     key={color}
                     onClick={() => handleColorChange(color)}
-                    className={`w-6 h-6 rounded-full border-2 hover:scale-110 transition-transform ${
-                      color === zone.default_color ? 'border-white' : 'border-zinc-600'
+                    className={`w-10 h-10 rounded-lg border-2 transition-all transform hover:scale-110 ${
+                      color === zone.default_color
+                        ? 'border-white scale-110 shadow-lg'
+                        : 'border-transparent hover:border-zinc-600'
                     }`}
                     style={{ backgroundColor: color }}
                     title={color}
