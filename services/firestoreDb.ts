@@ -475,8 +475,8 @@ export const firestoreDb = {
       try {
         const existing = await firestoreDb.bookmarkZones.list();
 
-        // Only create default zones if none exist
         if (existing.length === 0) {
+          // Create new zones if none exist
           const batch = writeBatch(db);
           DEFAULT_ZONES.forEach(zone => {
             const newDocRef = doc(collection(db, COLLECTIONS.BOOKMARK_ZONES));
@@ -486,8 +486,19 @@ export const firestoreDb = {
             });
           });
           await batch.commit();
+        } else if (existing.length === DEFAULT_ZONES.length) {
+          // Update default colors while preserving user-changed zone names
+          const batch = writeBatch(db);
+          existing.forEach((zone, index) => {
+            const defaultZone = DEFAULT_ZONES[index];
+            const docRef = doc(db, COLLECTIONS.BOOKMARK_ZONES, zone.id);
+            batch.update(docRef, {
+              default_color: defaultZone.default_color,
+              order: defaultZone.order,
+            });
+          });
+          await batch.commit();
         }
-        // If zones already exist, do not modify them - preserve user changes
       } catch (error) {
         console.error('Default zones 초기화 실패:', error);
       }
