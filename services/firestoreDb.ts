@@ -31,12 +31,12 @@ const COLLECTIONS = {
 
 // Default bookmark zones
 const DEFAULT_ZONES = [
-  { name: '영역 1', default_color: '#ef4444', order: 0 }, // Red
-  { name: '영역 2', default_color: '#f97316', order: 1 }, // Orange
-  { name: '영역 3', default_color: '#eab308', order: 2 }, // Yellow
-  { name: '영역 4', default_color: '#22c55e', order: 3 }, // Green
-  { name: '영역 5', default_color: '#3b82f6', order: 4 }, // Blue
-  { name: '영역 6', default_color: '#a855f7', order: 5 }, // Purple
+  { name: '영역1', default_color: '#c97e7e', order: 0 }, // Rose
+  { name: '영역2', default_color: '#d4a574', order: 1 }, // Caramel
+  { name: '영역3', default_color: '#d9c86b', order: 2 }, // Olive Gold
+  { name: '영역4', default_color: '#8cb89b', order: 3 }, // Celadon
+  { name: '영역5', default_color: '#8ab4d9', order: 4 }, // Slate Blue
+  { name: '영역6', default_color: '#c5a3d9', order: 5 }, // Mauve
 ];
 
 /**
@@ -474,6 +474,8 @@ export const firestoreDb = {
     initializeDefaults: async (): Promise<void> => {
       try {
         const existing = await firestoreDb.bookmarkZones.list();
+
+        // Only create default zones if none exist
         if (existing.length === 0) {
           const batch = writeBatch(db);
           DEFAULT_ZONES.forEach(zone => {
@@ -485,6 +487,7 @@ export const firestoreDb = {
           });
           await batch.commit();
         }
+        // If zones already exist, do not modify them - preserve user changes
       } catch (error) {
         console.error('Default zones 초기화 실패:', error);
       }

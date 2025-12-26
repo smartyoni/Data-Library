@@ -64,12 +64,21 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
           </h3>
         )}
 
-        {/* Color Indicator */}
-        <div
-          className="w-6 h-6 rounded-full flex-shrink-0 ml-2 border border-zinc-600"
-          style={{ backgroundColor: zone.default_color }}
-          title={zone.default_color}
-        />
+        {/* Add Button + Color Indicator */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={onAddBookmark}
+            className="p-1 hover:bg-white/10 rounded transition-colors"
+            title="북마크 추가"
+          >
+            <Icons.Plus className="w-4 h-4 text-zinc-400 hover:text-zinc-200 transition-colors" />
+          </button>
+          <div
+            className="w-6 h-6 rounded-full flex-shrink-0 border border-zinc-600"
+            style={{ backgroundColor: zone.default_color }}
+            title={zone.default_color}
+          />
+        </div>
       </div>
 
       {/* Bookmarks Grid (4 columns) */}
@@ -84,17 +93,6 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
                 onDelete={onDeleteBookmark}
               />
             ))}
-
-            {/* Add Button (if less than 9 bookmarks) */}
-            {bookmarks.length < 9 && (
-              <button
-                onClick={onAddBookmark}
-                className="flex items-center justify-center rounded-none border border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/20 hover:bg-zinc-900/40 transition-all aspect-square group"
-                title="북마크 추가"
-              >
-                <Icons.Plus className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
-              </button>
-            )}
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center">
