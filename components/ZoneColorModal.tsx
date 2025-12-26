@@ -31,13 +31,13 @@ const COLOR_PALETTE = [
   '#C9FF99', // Light Mint
   '#99D9D1', // Light Cyan
   '#B3D9FF', // Light Periwinkle
-  '#E6B3D9', // Light Magenta
+  '#FF99FF', // Light Magenta
   '#FF9999', // Light Coral
   '#99CCFF', // Light Sky Blue
   '#D9B3FF', // Light Iris
   '#FFCC99', // Light Sand
   '#99FFD9', // Light Aqua
-  '#D9B3FF', // Light Grape
+  '#E6CCFF', // Light Grape
   '#FFB3D9', // Light Rose
   '#99E6FF', // Light Ice
 ];

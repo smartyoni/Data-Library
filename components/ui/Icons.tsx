@@ -16,7 +16,8 @@ import {
   GripVertical,
   ArrowLeft,
   Bookmark,
-  Link
+  Link,
+  Home
 } from 'lucide-react';
 
 export const Icons = {
@@ -37,5 +38,6 @@ export const Icons = {
   DragHandle: GripVertical,
   Back: ArrowLeft,
   Bookmark,
-  Link
+  Link,
+  Home
 };
