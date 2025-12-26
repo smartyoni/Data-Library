@@ -12,7 +12,7 @@ interface BookmarkZoneProps {
   onDeleteBookmark: (id: string) => void;
 }
 
-// Color palette options - Notion style
+// Color palette options - Notion style (30 colors)
 const COLOR_PALETTE = [
   '#F3F3F1', // Gray
   '#FCEAE3', // Brown
@@ -30,6 +30,20 @@ const COLOR_PALETTE = [
   '#E7F2EE', // Teal
   '#E3E8FF', // Lavender
   '#FFF0F0', // Light Red
+  '#FCF0E4', // Light Orange
+  '#FFFAE6', // Light Yellow
+  '#F5FFF0', // Light Mint
+  '#E8F5F0', // Light Cyan
+  '#E8ECFF', // Light Periwinkle
+  '#F8E4F5', // Light Magenta
+  '#FFE8E8', // Light Coral
+  '#E4F0FF', // Light Sky Blue
+  '#F0E8FF', // Light Iris
+  '#FFF5E8', // Light Sand
+  '#E8FFF5', // Light Aqua
+  '#F5E8FF', // Light Grape
+  '#FFE8F5', // Light Rose
+  '#E8F8FF', // Light Ice
 ];
 
 const BookmarkZone: React.FC<BookmarkZoneProps> = ({
@@ -114,7 +128,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
           {/* Color Palette Popover */}
           {isColorPickerOpen && (
             <div className="absolute right-0 top-full mt-2 bg-zinc-950 border border-zinc-700 rounded-lg p-2 z-50 shadow-lg">
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-6 gap-2">
                 {COLOR_PALETTE.map((color) => (
                   <button
                     key={color}
