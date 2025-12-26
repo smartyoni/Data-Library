@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Item } from '../types';
 import { Icons } from './ui/Icons';
+import ConfirmModal from './ConfirmModal';
 
 interface ItemsListProps {
   categoryName: string | undefined;
@@ -14,12 +15,12 @@ interface ItemsListProps {
   onBack: () => void;
 }
 
-const ItemsList: React.FC<ItemsListProps> = ({ 
-  categoryName, 
-  items, 
-  selectedItemId, 
-  onSelectItem, 
-  onAddItem, 
+const ItemsList: React.FC<ItemsListProps> = ({
+  categoryName,
+  items,
+  selectedItemId,
+  onSelectItem,
+  onAddItem,
   onDeleteItem,
   onReorder,
   loading,
@@ -28,10 +29,22 @@ const ItemsList: React.FC<ItemsListProps> = ({
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const [localItems, setLocalItems] = useState<Item[]>(items);
+  const [menuItemId, setMenuItemId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalItems(items);
   }, [items]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setMenuItemId(null);
+    if (menuItemId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [menuItemId]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
     dragItem.current = position;
@@ -45,7 +58,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-     e.preventDefault(); 
+     e.preventDefault();
      e.dataTransfer.dropEffect = "move";
   };
 
@@ -59,13 +72,32 @@ const ItemsList: React.FC<ItemsListProps> = ({
       const draggedItemContent = _items[start];
       _items.splice(start, 1);
       _items.splice(end, 0, draggedItemContent);
-      
+
       setLocalItems(_items);
       onReorder(_items);
     }
-    
+
     dragItem.current = null;
     dragOverItem.current = null;
+  };
+
+  const handleMobileDeleteClick = (id: string) => {
+    setMenuItemId(null);
+    setDeletingItemId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingItemId) {
+      onDeleteItem(deletingItemId);
+    }
+    setDeleteConfirmOpen(false);
+    setDeletingItemId(null);
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setDeletingItemId(null);
   };
 
   return (
@@ -73,7 +105,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
        {/* Header */}
        <div className="h-16 flex items-center justify-between px-4 border-b border-border bg-background/50 flex-shrink-0">
          <div className="flex items-center gap-3 overflow-hidden">
-            <button 
+            <button
                 onClick={onBack}
                 className="md:hidden p-1 -ml-1 text-zinc-400 hover:text-white"
             >
@@ -83,7 +115,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
             {categoryName || '카테고리'}
             </h2>
          </div>
-         <button 
+         <button
            onClick={onAddItem}
            className="p-1.5 text-zinc-400 hover:text-accent hover:bg-zinc-800 rounded-md transition-colors"
            title="새 항목 추가"
@@ -116,25 +148,59 @@ const ItemsList: React.FC<ItemsListProps> = ({
                  <div className="cursor-grab active:cursor-grabbing p-1 text-zinc-600 hover:text-zinc-400 hidden md:block">
                     <Icons.DragHandle className="w-4 h-4" />
                  </div>
-                 
+
                  <div className="flex-1 min-w-0 pr-6">
                    <h3 className={`text-base md:text-sm font-medium leading-tight truncate ${selectedItemId === item.id ? 'text-white' : 'text-zinc-300'}`}>
                      {item.title || '제목 없음'}
                    </h3>
                  </div>
 
-                 {/* Mobile Arrow */}
-                 <Icons.ChevronRight className="w-4 h-4 text-zinc-600 md:hidden absolute right-3 top-1/2 -translate-y-1/2" />
+                 {/* Actions */}
+                 <div className="flex items-center gap-1 absolute right-2 top-1/2 -translate-y-1/2">
+                   {/* Mobile Chevron */}
+                   <Icons.ChevronRight className="w-4 h-4 text-zinc-600 md:hidden" />
 
-                 <button
+                   {/* Mobile 3-point Menu */}
+                   <div className="relative md:hidden">
+                     <button
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         setMenuItemId(menuItemId === item.id ? null : item.id);
+                       }}
+                       className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+                       title="옵션"
+                     >
+                       <Icons.More className="w-4 h-4" />
+                     </button>
+
+                     {/* Dropdown Menu */}
+                     {menuItemId === item.id && (
+                       <div
+                         className="absolute right-0 top-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10 min-w-[120px]"
+                         onClick={(e) => e.stopPropagation()}
+                       >
+                         <button
+                           onClick={() => handleMobileDeleteClick(item.id)}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                         >
+                           <Icons.Trash className="w-4 h-4" />
+                           삭제
+                         </button>
+                       </div>
+                     )}
+                   </div>
+
+                   {/* Desktop Delete Button - Hover */}
+                   <button
                      onClick={(e) => {
                        e.stopPropagation();
                        if(window.confirm('삭제하시겠습니까?')) onDeleteItem(item.id);
                      }}
-                     className="hidden md:block opacity-0 group-hover:opacity-100 p-1.5 text-zinc-600 hover:text-danger hover:bg-zinc-800 rounded transition-all absolute right-2 top-1/2 -translate-y-1/2"
+                     className="hidden md:block opacity-0 group-hover:opacity-100 p-1.5 text-zinc-600 hover:text-danger hover:bg-zinc-800 rounded transition-all"
                    >
                      <Icons.Trash className="w-4 h-4" />
                    </button>
+                 </div>
                </div>
              ))}
            </div>
@@ -147,6 +213,18 @@ const ItemsList: React.FC<ItemsListProps> = ({
            </div>
          )}
        </div>
+
+       {/* Delete Confirm Modal */}
+       <ConfirmModal
+         isOpen={deleteConfirmOpen}
+         title="항목 삭제"
+         message="이 항목을 삭제하시겠습니까?"
+         confirmText="삭제"
+         cancelText="취소"
+         onConfirm={confirmDelete}
+         onCancel={cancelDelete}
+         danger={true}
+       />
     </div>
   );
 };

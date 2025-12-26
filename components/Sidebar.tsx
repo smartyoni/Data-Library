@@ -3,6 +3,7 @@ import { Category } from '../types';
 import { Icons } from './ui/Icons';
 import firestoreDb from '../services/firestoreDb';
 import { Lock, Unlock, Home } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 
 interface SidebarProps {
   categories: Category[];
@@ -34,6 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [menuCategoryId, setMenuCategoryId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
 
   // Initialize theme based on current DOM state
   useEffect(() => {
@@ -43,6 +47,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         setTheme('dark');
     }
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setMenuCategoryId(null);
+    if (menuCategoryId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [menuCategoryId]);
 
   const toggleTheme = (newTheme: 'dark' | 'light') => {
     setTheme(newTheme);
@@ -86,6 +99,27 @@ const Sidebar: React.FC<SidebarProps> = ({
         onRefresh();
         if (selectedCategoryId === id) onSelectCategory('');
     }
+  };
+
+  const handleMobileDeleteClick = (id: string) => {
+    setMenuCategoryId(null);
+    setDeletingCategoryId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deletingCategoryId) {
+      await firestoreDb.categories.delete(deletingCategoryId);
+      onRefresh();
+      if (selectedCategoryId === deletingCategoryId) onSelectCategory('');
+    }
+    setDeleteConfirmOpen(false);
+    setDeletingCategoryId(null);
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setDeletingCategoryId(null);
   };
 
   const handleDeleteWorkspaceClick = (e: React.MouseEvent) => {
@@ -186,8 +220,40 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Show arrow on mobile to indicate navigation */}
             {editingCategoryId !== cat.id && (
-              <div className="flex items-center">
+              <div className="flex items-center gap-1">
                 <Icons.ChevronRight className="w-4 h-4 text-zinc-600 md:hidden" />
+
+                {/* Mobile 3-point Menu */}
+                <div className="relative md:hidden">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuCategoryId(menuCategoryId === cat.id ? null : cat.id);
+                    }}
+                    className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+                    title="옵션"
+                  >
+                    <Icons.More className="w-4 h-4" />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {menuCategoryId === cat.id && (
+                    <div
+                      className="absolute right-0 top-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10 min-w-[120px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => handleMobileDeleteClick(cat.id)}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                      >
+                        <Icons.Trash className="w-4 h-4" />
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Delete Button - Hover */}
                 <button
                     type="button"
                     onClick={(e) => handleDelete(e, cat.id)}
@@ -229,7 +295,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Workspace Footer Controls */}
       <div className="p-4 border-t border-border bg-zinc-950/50 mt-auto">
         <div className="flex items-center gap-2">
-           <button 
+           <button
              type="button"
              onClick={onToggleLock}
              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md border transition-all text-xs font-medium ${isLocked ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'}`}
@@ -239,12 +305,12 @@ const Sidebar: React.FC<SidebarProps> = ({
              {isLocked ? '잠금 됨' : '잠금 해제'}
            </button>
 
-           <button 
+           <button
              type="button"
              onClick={handleDeleteWorkspaceClick}
              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md border transition-all text-xs font-medium ${
-                isLocked 
-                  ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50' 
+                isLocked
+                  ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
                   : 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20 hover:border-red-500/40'
              }`}
            >
@@ -253,6 +319,18 @@ const Sidebar: React.FC<SidebarProps> = ({
            </button>
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirmOpen}
+        title="카테고리 삭제"
+        message="카테고리와 하위 항목이 모두 삭제됩니다. 계속하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        danger={true}
+      />
     </div>
   );
 };
