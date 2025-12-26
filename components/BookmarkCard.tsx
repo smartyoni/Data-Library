@@ -35,7 +35,7 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit, onDelete 
     >
       {/* 버튼 내용 */}
       <div className="flex-1 flex flex-col items-center justify-center gap-0 min-w-0 px-1 py-1">
-        <span className="text-[13px] font-bold text-white text-center line-clamp-2 w-full">
+        <span className="text-[14px] font-bold text-white text-center line-clamp-2 w-full">
           {bookmark.name}
         </span>
       </div>

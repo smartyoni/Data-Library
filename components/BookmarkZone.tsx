@@ -12,6 +12,26 @@ interface BookmarkZoneProps {
   onDeleteBookmark: (id: string) => void;
 }
 
+// Color palette options
+const COLOR_PALETTE = [
+  '#c97e7e', // Rose
+  '#d4a574', // Caramel
+  '#d9c86b', // Olive Gold
+  '#8cb89b', // Celadon
+  '#8ab4d9', // Slate Blue
+  '#c5a3d9', // Mauve
+  '#e8a8a8', // Soft Red
+  '#d9b8a3', // Warm Beige
+  '#d4d999', // Soft Green
+  '#9dbfa8', // Soft Teal
+  '#a8c5e0', // Sky Blue
+  '#d9aee0', // Soft Purple
+  '#b88e8e', // Dusty Rose
+  '#c4a589', // Caramel Brown
+  '#c9c589', // Muted Gold
+  '#88a8a8', // Muted Teal
+];
+
 const BookmarkZone: React.FC<BookmarkZoneProps> = ({
   zone,
   bookmarks,
@@ -22,6 +42,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(zone.name);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
   const handleSaveName = async () => {
     if (editedName.trim() && editedName !== zone.name) {
@@ -39,6 +60,16 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
       setEditedName(zone.name);
       setIsEditingName(false);
     }
+  };
+
+  const handleColorChange = async (color: string) => {
+    await onEditZone(zone.id, { default_color: color });
+    setIsColorPickerOpen(false);
+  };
+
+  const handleColorContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsColorPickerOpen(!isColorPickerOpen);
   };
 
   return (
@@ -65,7 +96,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
         )}
 
         {/* Add Button + Color Indicator */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 relative">
           <button
             onClick={onAddBookmark}
             className="p-1 hover:bg-white/10 rounded transition-colors"
@@ -74,10 +105,30 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
             <Icons.Plus className="w-4 h-4 text-zinc-400 hover:text-zinc-200 transition-colors" />
           </button>
           <div
-            className="w-6 h-6 rounded-full flex-shrink-0 border border-zinc-600"
+            className="w-6 h-6 rounded-full flex-shrink-0 border border-zinc-600 cursor-pointer hover:border-zinc-400 transition-colors"
             style={{ backgroundColor: zone.default_color }}
-            title={zone.default_color}
+            title={`${zone.default_color}\n우클릭하여 색상 변경`}
+            onContextMenu={handleColorContextMenu}
           />
+
+          {/* Color Palette Popover */}
+          {isColorPickerOpen && (
+            <div className="absolute right-0 top-full mt-2 bg-zinc-950 border border-zinc-700 rounded-lg p-2 z-50 shadow-lg">
+              <div className="grid grid-cols-4 gap-2">
+                {COLOR_PALETTE.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => handleColorChange(color)}
+                    className={`w-6 h-6 rounded-full border-2 hover:scale-110 transition-transform ${
+                      color === zone.default_color ? 'border-white' : 'border-zinc-600'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
