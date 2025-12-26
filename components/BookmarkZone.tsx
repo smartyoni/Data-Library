@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BookmarkZone as BookmarkZoneType, Bookmark } from '../types';
 import { Icons } from './ui/Icons';
 import BookmarkCard from './BookmarkCard';
+import ZoneColorModal from './ZoneColorModal';
 
 interface BookmarkZoneProps {
   zone: BookmarkZoneType;
@@ -12,39 +13,6 @@ interface BookmarkZoneProps {
   onDeleteBookmark: (id: string) => void;
 }
 
-// Color palette options - Notion style (30 colors)
-const COLOR_PALETTE = [
-  '#C0C0BD', // Gray
-  '#D9A891', // Brown
-  '#D99B71', // Orange
-  '#D9C659', // Yellow
-  '#C5E6A5', // Green
-  '#A8D5B8', // Sage
-  '#9CBFF5', // Blue
-  '#C9B3E6', // Purple
-  '#E6B3D9', // Pink
-  '#E67A7A', // Red
-  '#B8B8B3', // Warm Gray
-  '#C9B8A3', // Taupe
-  '#D9C9A3', // Cream
-  '#A3D9D1', // Teal
-  '#B3C9FF', // Lavender
-  '#FF8080', // Light Red
-  '#E8B8A3', // Light Orange
-  '#FFDE71', // Light Yellow
-  '#C9FF99', // Light Mint
-  '#99D9D1', // Light Cyan
-  '#B3D9FF', // Light Periwinkle
-  '#E6B3D9', // Light Magenta
-  '#FF9999', // Light Coral
-  '#99CCFF', // Light Sky Blue
-  '#D9B3FF', // Light Iris
-  '#FFCC99', // Light Sand
-  '#99FFD9', // Light Aqua
-  '#D9B3FF', // Light Grape
-  '#FFB3D9', // Light Rose
-  '#99E6FF', // Light Ice
-];
 
 const BookmarkZone: React.FC<BookmarkZoneProps> = ({
   zone,
@@ -56,7 +24,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(zone.name);
-  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isColorModalOpen, setIsColorModalOpen] = useState(false);
 
   const handleSaveName = async () => {
     if (editedName.trim() && editedName !== zone.name) {
@@ -78,12 +46,12 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
 
   const handleColorChange = async (color: string) => {
     await onEditZone(zone.id, { default_color: color });
-    setIsColorPickerOpen(false);
+    setIsColorModalOpen(false);
   };
 
   const handleColorContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsColorPickerOpen(!isColorPickerOpen);
+    setIsColorModalOpen(true);
   };
 
   return (
@@ -110,7 +78,7 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
         )}
 
         {/* Add Button + Color Indicator */}
-        <div className="flex items-center gap-2 flex-shrink-0 relative">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={onAddBookmark}
             className="p-1 hover:bg-white/10 rounded transition-colors"
@@ -124,27 +92,6 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
             title={`${zone.default_color}\n우클릭하여 색상 변경`}
             onContextMenu={handleColorContextMenu}
           />
-
-          {/* Color Palette Popover */}
-          {isColorPickerOpen && (
-            <div className="absolute right-0 top-full mt-2 bg-zinc-950 border border-zinc-700 rounded-lg p-2 z-50 shadow-lg">
-              <div className="grid grid-cols-6 gap-2">
-                {COLOR_PALETTE.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => handleColorChange(color)}
-                    className={`w-10 h-10 rounded-lg border-2 transition-all transform hover:scale-110 ${
-                      color === zone.default_color
-                        ? 'border-white scale-110 shadow-lg'
-                        : 'border-transparent hover:border-zinc-600'
-                    }`}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -174,6 +121,14 @@ const BookmarkZone: React.FC<BookmarkZoneProps> = ({
           </div>
         )}
       </div>
+
+      {/* Zone Color Modal */}
+      <ZoneColorModal
+        isOpen={isColorModalOpen}
+        currentColor={zone.default_color}
+        onColorSelect={handleColorChange}
+        onClose={() => setIsColorModalOpen(false)}
+      />
     </div>
   );
 };
