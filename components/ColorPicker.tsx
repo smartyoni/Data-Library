@@ -7,18 +7,36 @@ interface ColorPickerProps {
 }
 
 const PRESET_COLORS = [
-  '#ef4444', // Red
-  '#f97316', // Orange
-  '#eab308', // Yellow
-  '#22c55e', // Green
-  '#3b82f6', // Blue
-  '#a855f7', // Purple
-  '#ec4899', // Pink
-  '#14b8a6', // Teal
-  '#f59e0b', // Amber
-  '#06b6d4', // Cyan
-  '#8b5cf6', // Violet
-  '#6366f1', // Indigo
+  '#F3F3F1', // Gray
+  '#FCEAE3', // Brown
+  '#FADCC4', // Orange
+  '#FDF7DE', // Yellow
+  '#F0F7E4', // Green
+  '#DDEDDA', // Sage
+  '#DFEAFF', // Blue
+  '#EBE5FA', // Purple
+  '#F5DEEF', // Pink
+  '#FDECED', // Red
+  '#F2F2F0', // Warm Gray
+  '#E8E0D5', // Taupe
+  '#F4EDDE', // Cream
+  '#E7F2EE', // Teal
+  '#E3E8FF', // Lavender
+  '#FFF0F0', // Light Red
+  '#FCF0E4', // Light Orange
+  '#FFFAE6', // Light Yellow
+  '#F5FFF0', // Light Mint
+  '#E8F5F0', // Light Cyan
+  '#E8ECFF', // Light Periwinkle
+  '#F8E4F5', // Light Magenta
+  '#FFE8E8', // Light Coral
+  '#E4F0FF', // Light Sky Blue
+  '#F0E8FF', // Light Iris
+  '#FFF5E8', // Light Sand
+  '#E8FFF5', // Light Aqua
+  '#F5E8FF', // Light Grape
+  '#FFE8F5', // Light Rose
+  '#E8F8FF', // Light Ice
 ];
 
 const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onChange, label = '색상' }) => {
