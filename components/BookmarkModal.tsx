@@ -142,7 +142,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded bg-zinc-700 text-white hover:bg-zinc-600 transition-colors text-xs font-medium"
+              className="px-3 py-1.5 rounded bg-yellow-500 text-black hover:bg-yellow-600 transition-colors text-xs font-medium"
             >
               취소
             </button>
