@@ -367,10 +367,12 @@ export const firestoreDb = {
           where('item_id', '==', itemId)
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as ChecklistItem));
+        return snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as ChecklistItem))
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       } catch (error) {
         console.error('Checklists 조회 실패:', error);
         return [];
@@ -379,11 +381,21 @@ export const firestoreDb = {
 
     create: async (itemId: string): Promise<ChecklistItem> => {
       try {
+        // Get siblings to determine order
+        const q = query(
+          collection(db, COLLECTIONS.CHECKLISTS),
+          where('item_id', '==', itemId)
+        );
+        const snapshot = await getDocs(q);
+        const siblings = snapshot.docs.map(doc => doc.data() as ChecklistItem);
+        const maxOrder = siblings.reduce((max, item) => Math.max(max, item.order ?? 0), -1);
+
         const docRef = await addDoc(collection(db, COLLECTIONS.CHECKLISTS), {
           item_id: itemId,
           text: '',
           is_checked: false,
           memo: '',
+          order: maxOrder + 1,
           created_at: now(),
         });
 
@@ -393,6 +405,7 @@ export const firestoreDb = {
           text: '',
           is_checked: false,
           memo: '',
+          order: maxOrder + 1,
           created_at: now(),
         };
       } catch (error) {
@@ -418,6 +431,29 @@ export const firestoreDb = {
         await deleteDoc(doc(db, COLLECTIONS.CHECKLISTS, id));
       } catch (error) {
         console.error('Checklist 삭제 실패:', error);
+        throw error;
+      }
+    },
+
+    reorder: async (itemId: string, orderedChecklistIds: string[]): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+        const q = query(
+          collection(db, COLLECTIONS.CHECKLISTS),
+          where('item_id', '==', itemId)
+        );
+        const snapshot = await getDocs(q);
+
+        snapshot.docs.forEach((docSnap) => {
+          const newIndex = orderedChecklistIds.indexOf(docSnap.id);
+          if (newIndex !== -1) {
+            batch.update(docSnap.ref, { order: newIndex });
+          }
+        });
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Checklist 정렬 실패:', error);
         throw error;
       }
     },

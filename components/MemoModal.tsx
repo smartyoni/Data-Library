@@ -60,11 +60,11 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border bg-zinc-950/30 flex justify-end gap-3">
+        <div className="p-4 border-t border-border bg-blue-500/10 flex justify-end gap-3">
           {isEditing ? (
             <button
                 onClick={handleSave}
-                className="px-6 py-2.5 text-sm font-medium text-white bg-accent hover:bg-blue-600 rounded-md shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2"
+                className="px-6 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md shadow-lg shadow-red-900/30 transition-all flex items-center gap-2"
             >
                 <Icons.Save className="w-4 h-4" />
                 저장
@@ -72,14 +72,14 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
           ) : (
              <button
                 onClick={() => setIsEditing(true)}
-                className="px-6 py-2.5 text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+                className="px-6 py-2.5 text-sm font-medium text-zinc-900 bg-red-500 hover:bg-red-600 rounded-md transition-colors font-semibold shadow-lg shadow-red-900/30"
             >
                 수정
             </button>
           )}
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors border border-zinc-800 hover:border-zinc-700"
+            className="px-6 py-2.5 text-sm font-medium text-zinc-900 bg-yellow-400 hover:bg-yellow-500 rounded-md transition-colors font-semibold shadow-lg shadow-yellow-900/30"
           >
             닫기
           </button>
