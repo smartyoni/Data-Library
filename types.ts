@@ -10,6 +10,7 @@ export interface Category {
   id: string;
   workspace_id: string;
   name: string;
+  order: number;
   created_at: string;
 }
 

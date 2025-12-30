@@ -171,12 +171,37 @@ export const firestoreDb = {
           where('workspace_id', '==', workspaceId)
         );
         const snapshot = await getDocs(q);
+
+        // Check if migration is needed (categories without order field)
+        const needsMigration = snapshot.docs.some(doc => doc.data().order === undefined);
+
+        if (needsMigration && snapshot.docs.length > 0) {
+          // Perform migration: assign order based on alphabetical sort
+          const sortedDocs = [...snapshot.docs].sort((a, b) =>
+            (a.data().name as string).localeCompare(b.data().name as string, 'ko')
+          );
+
+          const batch = writeBatch(db);
+          sortedDocs.forEach((docSnap, index) => {
+            batch.update(docSnap.ref, { order: index });
+          });
+
+          await batch.commit();
+
+          // Return migrated data
+          return sortedDocs.map((docSnap, index) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            order: index,
+          } as Category));
+        }
+
         return snapshot.docs
           .map(doc => ({
             id: doc.id,
             ...doc.data(),
           } as Category))
-          .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       } catch (error) {
         console.error('Categories 조회 실패:', error);
         return [];
@@ -185,15 +210,26 @@ export const firestoreDb = {
 
     create: async (workspaceId: string, name: string): Promise<Category> => {
       try {
+        // Get siblings to determine order
+        const q = query(
+          collection(db, COLLECTIONS.CATEGORIES),
+          where('workspace_id', '==', workspaceId)
+        );
+        const snapshot = await getDocs(q);
+        const siblings = snapshot.docs.map(doc => doc.data() as Category);
+        const maxOrder = siblings.reduce((max, cat) => Math.max(max, cat.order ?? 0), -1);
+
         const docRef = await addDoc(collection(db, COLLECTIONS.CATEGORIES), {
           workspace_id: workspaceId,
           name,
+          order: maxOrder + 1,
           created_at: now(),
         });
         return {
           id: docRef.id,
           workspace_id: workspaceId,
           name,
+          order: maxOrder + 1,
           created_at: now(),
         };
       } catch (error) {
@@ -208,6 +244,29 @@ export const firestoreDb = {
         await updateDoc(docRef, { name });
       } catch (error) {
         console.error('Category 업데이트 실패:', error);
+        throw error;
+      }
+    },
+
+    reorder: async (workspaceId: string, orderedCategoryIds: string[]): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+        const q = query(
+          collection(db, COLLECTIONS.CATEGORIES),
+          where('workspace_id', '==', workspaceId)
+        );
+        const snapshot = await getDocs(q);
+
+        snapshot.docs.forEach((docSnap) => {
+          const newIndex = orderedCategoryIds.indexOf(docSnap.id);
+          if (newIndex !== -1) {
+            batch.update(docSnap.ref, { order: newIndex });
+          }
+        });
+
+        await batch.commit();
+      } catch (error) {
+        console.error('Category 정렬 실패:', error);
         throw error;
       }
     },

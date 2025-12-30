@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Category } from '../types';
 import { Icons } from './ui/Icons';
 import firestoreDb from '../services/firestoreDb';
@@ -38,6 +38,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [menuCategoryId, setMenuCategoryId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+
+  // Drag and drop refs
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+
+  // Update local categories when props change
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   // Initialize theme based on current DOM state
   useEffect(() => {
@@ -125,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleDeleteWorkspaceClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isLocked) {
         alert("잠금 상태인 탭은 삭제할 수 없습니다.");
         return;
@@ -133,6 +143,83 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     if (window.confirm(`'${workspaceName}' 탭을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없으며, 포함된 모든 카테고리와 항목이 영구적으로 삭제됩니다.`)) {
         onDeleteWorkspace();
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragItem.current = position;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragOverItem.current = position;
+    e.preventDefault();
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const start = dragItem.current;
+    const end = dragOverItem.current;
+
+    if (start !== null && end !== null && start !== end) {
+      const _categories = [...localCategories];
+      const draggedCategory = _categories[start];
+      _categories.splice(start, 1);
+      _categories.splice(end, 0, draggedCategory);
+
+      // Optimistic update
+      setLocalCategories(_categories);
+
+      // Update database
+      await firestoreDb.categories.reorder(
+        _categories[0].workspace_id,
+        _categories.map(cat => cat.id)
+      );
+    }
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
+  // Mobile arrow button handlers
+  const handleMoveUp = async (id: string) => {
+    const index = localCategories.findIndex(cat => cat.id === id);
+    if (index > 0) {
+      const newOrder = [...localCategories];
+      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+
+      // Optimistic update
+      setLocalCategories(newOrder);
+
+      // Update database
+      await firestoreDb.categories.reorder(
+        newOrder[0].workspace_id,
+        newOrder.map(cat => cat.id)
+      );
+    }
+  };
+
+  const handleMoveDown = async (id: string) => {
+    const index = localCategories.findIndex(cat => cat.id === id);
+    if (index < localCategories.length - 1) {
+      const newOrder = [...localCategories];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+
+      // Optimistic update
+      setLocalCategories(newOrder);
+
+      // Update database
+      await firestoreDb.categories.reorder(
+        newOrder[0].workspace_id,
+        newOrder.map(cat => cat.id)
+      );
     }
   };
 
@@ -185,9 +272,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             업무 카테고리
         </div>
 
-        {categories.map((cat) => (
+        {localCategories.map((cat, index) => (
           <div
             key={cat.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragEnter={(e) => handleDragEnter(e, index)}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
             onClick={() => onSelectCategory(cat.id)}
             onDoubleClick={(e) => handleEditCategory(e, cat.id, cat.name)}
             className={`group flex items-center justify-between px-4 py-3 md:py-2.5 rounded-lg cursor-pointer transition-all ${
@@ -197,6 +289,45 @@ const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-3 overflow-hidden">
+              {/* Desktop drag handle (hidden on mobile) */}
+              <div className="hidden md:block cursor-grab active:cursor-grabbing pt-1 text-zinc-600 hover:text-zinc-400">
+                <Icons.DragHandle className="w-4 h-4" />
+              </div>
+
+              {/* Mobile up/down arrows (hidden on desktop) */}
+              <div className="flex md:hidden flex-col gap-0.5 pt-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveUp(cat.id);
+                  }}
+                  disabled={index === 0}
+                  className={`p-0.5 transition-colors ${
+                    index === 0
+                      ? 'opacity-20 cursor-not-allowed text-zinc-700'
+                      : 'text-zinc-500 hover:text-accent'
+                  }`}
+                  title="위로 이동"
+                >
+                  <Icons.ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveDown(cat.id);
+                  }}
+                  disabled={index === localCategories.length - 1}
+                  className={`p-0.5 transition-colors ${
+                    index === localCategories.length - 1
+                      ? 'opacity-20 cursor-not-allowed text-zinc-700'
+                      : 'text-zinc-500 hover:text-accent'
+                  }`}
+                  title="아래로 이동"
+                >
+                  <Icons.ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <Icons.Folder className={`w-5 h-5 md:w-4 md:h-4 flex-shrink-0 ${selectedCategoryId === cat.id ? 'fill-accent/20' : ''}`} />
               {editingCategoryId === cat.id ? (
                 <input
