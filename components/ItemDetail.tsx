@@ -65,11 +65,18 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
     }
   };
 
-  // Helper to parse text and convert URLs to links
+  // Helper to parse text and convert URLs and phone numbers to links
   const renderContentWithLinks = (text: string) => {
     if (!text) return null;
+
+    // 정규식: URL, 핸드폰 번호 (01X-XXXX-XXXX, 01XXXXXXXXXX, 01X XXXX XXXX 등)
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.split(urlRegex).map((part, index) => {
+    const phoneRegex = /(01[0-9][-.\s]?[0-9]{3,4}[-.\s]?[0-9]{4})/g;
+
+    // 먼저 URL로 분할
+    const urlParts = text.split(urlRegex);
+
+    return urlParts.map((part, index) => {
       if (part.match(urlRegex)) {
         return (
           <a
@@ -84,7 +91,27 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
           </a>
         );
       }
-      return part;
+
+      // URL이 아닌 부분에서 핸드폰 번호 찾기
+      const phoneParts = part.split(phoneRegex);
+      return phoneParts.map((subPart, subIndex) => {
+        if (subPart && subPart.match(phoneRegex)) {
+          // 핸드폰 번호에서 숫자만 추출
+          const phoneNumber = subPart.replace(/[-.\s]/g, '');
+          return (
+            <a
+              key={`${index}-${subIndex}`}
+              href={`tel:${phoneNumber}`}
+              className="text-green-400 hover:text-green-300 hover:underline break-all relative z-20 font-semibold"
+              onClick={(e) => e.stopPropagation()}
+              title="클릭하여 SMS 전송"
+            >
+              {subPart}
+            </a>
+          );
+        }
+        return subPart;
+      });
     });
   };
 
