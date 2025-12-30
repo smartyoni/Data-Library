@@ -103,6 +103,14 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategoryId]);
 
+  // Close bookmark manager when item is selected
+  useEffect(() => {
+    if (selectedItemId && showBookmarks && onCloseBookmarks) {
+      onCloseBookmarks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItemId]);
+
   const loadCategories = async () => {
     const data = await firestoreDb.categories.listByWorkspace(workspace.id);
     setCategories(data);
