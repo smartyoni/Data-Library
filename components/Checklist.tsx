@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from './ui/Icons';
 import { ChecklistItem } from '../types';
 import firestoreDb from '../services/firestoreDb';
@@ -16,6 +16,10 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState('');
   const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Drag and drop refs
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   const fetchItems = async () => {
     const data = await firestoreDb.checklist.listByItem(itemId);
@@ -99,6 +103,74 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragItem.current = position;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragOverItem.current = position;
+    e.preventDefault();
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const start = dragItem.current;
+    const end = dragOverItem.current;
+
+    if (start !== null && end !== null && start !== end) {
+      const _items = [...items];
+      const draggedItemContent = _items[start];
+      _items.splice(start, 1);
+      _items.splice(end, 0, draggedItemContent);
+
+      // Optimistic update
+      setItems(_items);
+
+      // Update database
+      await firestoreDb.checklist.reorder(itemId, _items.map(i => i.id));
+    }
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
+  // Mobile arrow button handlers
+  const handleMoveUp = async (id: string) => {
+    const index = items.findIndex(i => i.id === id);
+    if (index > 0) {
+      const newOrder = [...items];
+      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+
+      // Optimistic update
+      setItems(newOrder);
+
+      // Update database
+      await firestoreDb.checklist.reorder(itemId, newOrder.map(i => i.id));
+    }
+  };
+
+  const handleMoveDown = async (id: string) => {
+    const index = items.findIndex(i => i.id === id);
+    if (index < items.length - 1) {
+      const newOrder = [...items];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+
+      // Optimistic update
+      setItems(newOrder);
+
+      // Update database
+      await firestoreDb.checklist.reorder(itemId, newOrder.map(i => i.id));
+    }
+  };
+
   if (loading) return <div className="text-secondary text-sm">로딩 중...</div>;
 
   return (
@@ -125,13 +197,57 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
 
       {/* List */}
       <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
             key={item.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragEnter={(e) => handleDragEnter(e, index)}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
             className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30"
           >
+            {/* Desktop drag handle (hidden on mobile) */}
+            <div className="hidden md:block cursor-grab active:cursor-grabbing pt-1 text-zinc-600 hover:text-zinc-400">
+              <Icons.DragHandle className="w-4 h-4" />
+            </div>
+
+            {/* Mobile up/down arrows (hidden on desktop) */}
+            <div className="flex md:hidden flex-col gap-0.5 pt-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveUp(item.id);
+                }}
+                disabled={index === 0}
+                className={`p-0.5 transition-colors ${
+                  index === 0
+                    ? 'opacity-20 cursor-not-allowed text-zinc-700'
+                    : 'text-zinc-500 hover:text-accent'
+                }`}
+                title="위로 이동"
+              >
+                <Icons.ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveDown(item.id);
+                }}
+                disabled={index === items.length - 1}
+                className={`p-0.5 transition-colors ${
+                  index === items.length - 1
+                    ? 'opacity-20 cursor-not-allowed text-zinc-700'
+                    : 'text-zinc-500 hover:text-accent'
+                }`}
+                title="아래로 이동"
+              >
+                <Icons.ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <div className="pt-1">
-              <input 
+              <input
                 type="checkbox"
                 checked={item.is_checked}
                 onChange={(e) => handleUpdate(item.id, { is_checked: e.target.checked })}
@@ -187,12 +303,12 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                     />
                   </div>
                 ) : (
-                  <div 
-                      className="mt-1.5 text-xs text-zinc-500/80 flex items-center gap-1.5 cursor-pointer w-fit py-0.5 rounded transition-colors hover:text-zinc-300 select-none group/memo"
+                  <div
+                      className="mt-1.5 text-xs text-green-500/80 flex items-center gap-1.5 cursor-pointer w-fit py-0.5 rounded transition-colors hover:text-green-400 select-none group/memo"
                       onDoubleClick={() => setEditingMemoId(item.id)}
                       title="더블클릭하여 메모 수정"
                   >
-                      <Icons.Memo className="w-3 h-3 flex-shrink-0" />
+                      <Icons.Memo className="w-3 h-3 flex-shrink-0 text-green-500" />
                       <span className="truncate max-w-[200px]">{item.memo}</span>
                   </div>
                 )
@@ -202,7 +318,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => onOpenMemo(item)}
-                className={`p-1.5 rounded transition-colors ${item.memo ? 'text-accent bg-accent/10' : 'text-zinc-500 hover:text-accent hover:bg-zinc-700'}`}
+                className={`p-1.5 rounded transition-colors ${item.memo ? 'text-green-500 bg-green-500/10' : 'text-zinc-500 hover:text-accent hover:bg-zinc-700'}`}
                 title="메모 크게 보기"
               >
                 <Icons.Memo className="w-4 h-4" />

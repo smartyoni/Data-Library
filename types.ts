@@ -25,6 +25,7 @@ export interface Item {
 export interface ChecklistItem {
   id: string;
   item_id: string;
+  order: number;
   text: string;
   is_checked: boolean;
   memo: string;
