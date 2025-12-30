@@ -305,11 +305,11 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                 ) : (
                   <div
                       className="mt-1.5 text-xs text-green-500/80 flex items-center gap-1.5 cursor-pointer w-fit py-0.5 rounded transition-colors hover:text-green-400 select-none group/memo"
-                      onDoubleClick={() => setEditingMemoId(item.id)}
-                      title="더블클릭하여 메모 수정"
+                      onClick={() => onOpenMemo(item)}
+                      title="클릭하여 메모 미리보기"
                   >
                       <Icons.Memo className="w-3 h-3 flex-shrink-0 text-green-500" />
-                      <span className="truncate max-w-[200px]">{item.memo}</span>
+                      <span className="truncate max-w-[400px]">{item.memo}</span>
                   </div>
                 )
               )}
