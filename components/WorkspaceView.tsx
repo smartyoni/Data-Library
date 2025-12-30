@@ -33,9 +33,13 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   registerHandlers,
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(() => {
+    return localStorage.getItem(`selectedCategoryId_${workspace.id}`) || null;
+  });
   const [items, setItems] = useState<Item[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(() => {
+    return localStorage.getItem(`selectedItemId_${workspace.id}`) || null;
+  });
   const [loadingItems, setLoadingItems] = useState(false);
   
   // Modal State
@@ -45,17 +49,45 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   // Load categories when workspace changes
   useEffect(() => {
     loadCategories();
-    setSelectedCategoryId(null);
+    // 워크스페이스 변경시 저장된 카테고리 ID 불러오기
+    const savedCategoryId = localStorage.getItem(`selectedCategoryId_${workspace.id}`);
+    const savedItemId = localStorage.getItem(`selectedItemId_${workspace.id}`);
+
+    setSelectedCategoryId(savedCategoryId);
     setItems([]);
     setSelectedItemId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace.id]);
 
+  // Save selectedCategoryId to localStorage
+  useEffect(() => {
+    if (selectedCategoryId) {
+      localStorage.setItem(`selectedCategoryId_${workspace.id}`, selectedCategoryId);
+    } else {
+      localStorage.removeItem(`selectedCategoryId_${workspace.id}`);
+    }
+  }, [selectedCategoryId, workspace.id]);
+
+  // Save selectedItemId to localStorage
+  useEffect(() => {
+    if (selectedItemId) {
+      localStorage.setItem(`selectedItemId_${workspace.id}`, selectedItemId);
+    } else {
+      localStorage.removeItem(`selectedItemId_${workspace.id}`);
+    }
+  }, [selectedItemId, workspace.id]);
+
   // Load items when category changes
   useEffect(() => {
     if (selectedCategoryId) {
       loadItems(selectedCategoryId);
-      setSelectedItemId(null);
+      // 저장된 아이템 ID 불러오기
+      const savedItemId = localStorage.getItem(`selectedItemId_${workspace.id}`);
+      if (savedItemId) {
+        setSelectedItemId(savedItemId);
+      } else {
+        setSelectedItemId(null);
+      }
     } else {
       setItems([]);
       setSelectedItemId(null);

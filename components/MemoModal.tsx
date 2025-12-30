@@ -33,6 +33,30 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
     handleSave();
   };
 
+  // URL을 하이퍼링크로 변환하는 함수
+  const renderTextWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline break-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-surface border border-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col shadow-black/50">
@@ -49,12 +73,12 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
               autoFocus
             />
           ) : (
-            <div 
+            <div
                 className="flex-1 w-full bg-zinc-900/30 rounded-lg p-5 text-base text-zinc-300 overflow-y-auto custom-scrollbar whitespace-pre-wrap cursor-pointer hover:bg-zinc-900/50 transition-colors border border-transparent hover:border-zinc-800"
                 onDoubleClick={() => setIsEditing(true)}
                 title="더블클릭하여 수정"
             >
-                {memoText || <span className="text-zinc-500 italic">메모 내용이 없습니다. 더블클릭하여 내용을 입력하세요.</span>}
+                {memoText ? renderTextWithLinks(memoText) : <span className="text-zinc-500 italic">메모 내용이 없습니다. 더블클릭하여 내용을 입력하세요.</span>}
             </div>
           )}
         </div>

@@ -15,8 +15,12 @@ const isMobileDevice = (): boolean => {
 
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
-  const [isBookmarkViewActive, setIsBookmarkViewActive] = useState(false);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(() => {
+    return localStorage.getItem('activeWorkspaceId') || null;
+  });
+  const [isBookmarkViewActive, setIsBookmarkViewActive] = useState(() => {
+    return localStorage.getItem('isBookmarkViewActive') === 'true';
+  });
 
   // WorkspaceView 상태 추적 (하드웨어 뒤로가기 처리용)
   const workspaceStateRef = useRef<{
@@ -51,6 +55,18 @@ const App: React.FC = () => {
   useEffect(() => {
     loadWorkspaces();
   }, [loadWorkspaces]);
+
+  // Save activeWorkspaceId to localStorage
+  useEffect(() => {
+    if (activeWorkspaceId) {
+      localStorage.setItem('activeWorkspaceId', activeWorkspaceId);
+    }
+  }, [activeWorkspaceId]);
+
+  // Save isBookmarkViewActive to localStorage
+  useEffect(() => {
+    localStorage.setItem('isBookmarkViewActive', isBookmarkViewActive.toString());
+  }, [isBookmarkViewActive]);
 
   // Set default active workspace when workspaces are loaded
   useEffect(() => {
