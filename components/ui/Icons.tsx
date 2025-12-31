@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   Bookmark,
   Link,
-  Home
+  Home,
+  EyeOff
 } from 'lucide-react';
 
 export const Icons = {
@@ -41,5 +42,6 @@ export const Icons = {
   Back: ArrowLeft,
   Bookmark,
   Link,
-  Home
+  Home,
+  EyeOff
 };

@@ -41,7 +41,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     return localStorage.getItem(`selectedItemId_${workspace.id}`) || null;
   });
   const [loadingItems, setLoadingItems] = useState(false);
-  
+  const [hiddenCategoriesCount, setHiddenCategoriesCount] = useState(0);
+
   // Modal State
   const [isMemoModalOpen, setMemoModalOpen] = useState(false);
   const [currentMemoItem, setCurrentMemoItem] = useState<ChecklistItem | null>(null);
@@ -112,8 +113,15 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   }, [selectedItemId]);
 
   const loadCategories = async () => {
-    const data = await firestoreDb.categories.listByWorkspace(workspace.id);
-    setCategories(data);
+    // Get visible categories (숨김 제외)
+    const visibleData = await firestoreDb.categories.listByWorkspace(workspace.id, false);
+    setCategories(visibleData);
+
+    // Calculate hidden categories count
+    const allData = await firestoreDb.categories.listByWorkspace(workspace.id, true);
+    const hiddenCount = allData.filter(cat => cat.is_hidden).length;
+    setHiddenCategoriesCount(hiddenCount);
+
     // On mobile, we don't auto-select. On desktop, we could, but let's keep it consistent or simple.
     // If we want desktop to auto-select, we need to check screen size or just default to null for a cleaner "empty state".
     // Let's default to first category only if on desktop? For now, keep null to show sidebar only on mobile.
@@ -222,6 +230,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
           onDeleteWorkspace={handleDeleteWorkspace}
           onToggleLock={handleToggleLock}
           onShowBookmarks={onShowBookmarks}
+          hiddenCategoriesCount={hiddenCategoriesCount}
         />
       </div>
 

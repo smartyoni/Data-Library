@@ -11,6 +11,7 @@ export interface Category {
   workspace_id: string;
   name: string;
   order: number;
+  is_hidden: boolean;
   created_at: string;
 }
 

@@ -164,7 +164,7 @@ export const firestoreDb = {
   },
 
   categories: {
-    listByWorkspace: async (workspaceId: string): Promise<Category[]> => {
+    listByWorkspace: async (workspaceId: string, includeHidden: boolean = false): Promise<Category[]> => {
       try {
         const q = query(
           collection(db, COLLECTIONS.CATEGORIES),
@@ -189,19 +189,23 @@ export const firestoreDb = {
           await batch.commit();
 
           // Return migrated data
-          return sortedDocs.map((docSnap, index) => ({
+          const categories = sortedDocs.map((docSnap, index) => ({
             id: docSnap.id,
             ...docSnap.data(),
             order: index,
           } as Category));
+
+          return includeHidden ? categories : categories.filter(cat => !cat.is_hidden);
         }
 
-        return snapshot.docs
+        const categories = snapshot.docs
           .map(doc => ({
             id: doc.id,
             ...doc.data(),
           } as Category))
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+        return includeHidden ? categories : categories.filter(cat => !cat.is_hidden);
       } catch (error) {
         console.error('Categories 조회 실패:', error);
         return [];
@@ -223,6 +227,7 @@ export const firestoreDb = {
           workspace_id: workspaceId,
           name,
           order: maxOrder + 1,
+          is_hidden: false,
           created_at: now(),
         });
         return {
@@ -230,6 +235,7 @@ export const firestoreDb = {
           workspace_id: workspaceId,
           name,
           order: maxOrder + 1,
+          is_hidden: false,
           created_at: now(),
         };
       } catch (error) {
@@ -302,6 +308,26 @@ export const firestoreDb = {
         await batch.commit();
       } catch (error) {
         console.error('Category 삭제 실패:', error);
+        throw error;
+      }
+    },
+
+    hide: async (id: string): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.CATEGORIES, id);
+        await updateDoc(docRef, { is_hidden: true });
+      } catch (error) {
+        console.error('Category 숨기기 실패:', error);
+        throw error;
+      }
+    },
+
+    unhide: async (id: string): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.CATEGORIES, id);
+        await updateDoc(docRef, { is_hidden: false });
+      } catch (error) {
+        console.error('Category 복원 실패:', error);
         throw error;
       }
     },

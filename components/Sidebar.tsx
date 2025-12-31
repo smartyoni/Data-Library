@@ -4,6 +4,7 @@ import { Icons } from './ui/Icons';
 import firestoreDb from '../services/firestoreDb';
 import { Lock, Unlock, Home } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
+import HiddenCategoriesModal from './HiddenCategoriesModal';
 
 interface SidebarProps {
   categories: Category[];
@@ -16,6 +17,7 @@ interface SidebarProps {
   onDeleteWorkspace: () => void;
   onToggleLock: () => void;
   onShowBookmarks?: () => void;
+  hiddenCategoriesCount?: number;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -28,7 +30,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onAddCategory,
   onDeleteWorkspace,
   onToggleLock,
-  onShowBookmarks
+  onShowBookmarks,
+  hiddenCategoriesCount = 0
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -38,6 +41,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [menuCategoryId, setMenuCategoryId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [contextMenuCategoryId, setContextMenuCategoryId] = useState<string | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [showHiddenModal, setShowHiddenModal] = useState(false);
+  const [hiddenCategories, setHiddenCategories] = useState<Category[]>([]);
 
   // Drag and drop refs
   const dragItem = useRef<number | null>(null);
@@ -130,6 +137,71 @@ const Sidebar: React.FC<SidebarProps> = ({
   const cancelDelete = () => {
     setDeleteConfirmOpen(false);
     setDeletingCategoryId(null);
+  };
+
+  // Context menu handlers
+  const handleContextMenu = (e: React.MouseEvent, categoryId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuCategoryId(categoryId);
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleCancelContextMenu = () => {
+    setContextMenuCategoryId(null);
+  };
+
+  const handleHideCategory = async (categoryId: string) => {
+    try {
+      await firestoreDb.categories.hide(categoryId);
+      setContextMenuCategoryId(null);
+      // Clear selection if the hidden category was selected
+      if (selectedCategoryId === categoryId) {
+        onSelectCategory('');
+      }
+      onRefresh();
+    } catch (error) {
+      console.error('카테고리 숨기기 실패:', error);
+    }
+  };
+
+  // Hidden categories modal handlers
+  const loadHiddenCategories = async () => {
+    try {
+      if (categories.length === 0) return;
+      const workspaceId = categories[0].workspace_id;
+      const allCategories = await firestoreDb.categories.listByWorkspace(workspaceId, true);
+      setHiddenCategories(allCategories.filter(cat => cat.is_hidden));
+    } catch (error) {
+      console.error('숨긴 카테고리 로드 실패:', error);
+    }
+  };
+
+  const handleShowHiddenModal = async () => {
+    await loadHiddenCategories();
+    setShowHiddenModal(true);
+  };
+
+  const handleUnhideCategory = async (categoryId: string) => {
+    try {
+      await firestoreDb.categories.unhide(categoryId);
+      await loadHiddenCategories();
+      onRefresh();
+    } catch (error) {
+      console.error('카테고리 복원 실패:', error);
+    }
+  };
+
+  const handlePermanentlyDeleteCategory = async (categoryId: string) => {
+    if (window.confirm('카테고리를 영구적으로 삭제하시겠습니까? 하위 항목도 모두 삭제됩니다.')) {
+      try {
+        await firestoreDb.categories.delete(categoryId);
+        await loadHiddenCategories();
+        onRefresh();
+      } catch (error) {
+        console.error('카테고리 삭제 실패:', error);
+      }
+    }
   };
 
   const handleDeleteWorkspaceClick = (e: React.MouseEvent) => {
@@ -282,6 +354,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             onDrop={handleDrop}
             onClick={() => onSelectCategory(cat.id)}
             onDoubleClick={(e) => handleEditCategory(e, cat.id, cat.name)}
+            onContextMenu={(e) => handleContextMenu(e, cat.id)}
             className={`group flex items-center justify-between px-4 py-3 md:py-2.5 rounded-lg cursor-pointer transition-all ${
               selectedCategoryId === cat.id
                 ? 'bg-accent/10 text-accent border border-accent/20'
@@ -374,8 +447,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
+                        onClick={() => {
+                          handleHideCategory(cat.id);
+                          setMenuCategoryId(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+                      >
+                        <Icons.EyeOff className="w-4 h-4" />
+                        숨기기
+                      </button>
+                      <button
                         onClick={() => handleMobileDeleteClick(cat.id)}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-zinc-800"
                       >
                         <Icons.Trash className="w-4 h-4" />
                         삭제
@@ -421,10 +504,59 @@ const Sidebar: React.FC<SidebarProps> = ({
                 새 카테고리 추가
             </button>
         )}
+
+        {/* Context Menu (Desktop Right-Click) */}
+        {contextMenuCategoryId && (
+          <>
+            {/* Background overlay to close menu on click */}
+            <div
+              className="fixed inset-0 z-40"
+              onClick={handleCancelContextMenu}
+            />
+
+            {/* Context Menu */}
+            <div
+              className="fixed bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 min-w-[140px]"
+              style={{
+                left: `${Math.min(contextMenuPosition.x, window.innerWidth - 160)}px`,
+                top: `${Math.min(contextMenuPosition.y, window.innerHeight - 100)}px`,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => handleHideCategory(contextMenuCategoryId)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors first:rounded-t-lg"
+              >
+                <Icons.EyeOff className="w-4 h-4" />
+                숨기기
+              </button>
+              <button
+                onClick={handleCancelContextMenu}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors border-t border-zinc-700 last:rounded-b-lg"
+              >
+                <Icons.Close className="w-4 h-4" />
+                취소
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Workspace Footer Controls */}
       <div className="p-4 border-t border-border bg-zinc-950/50 mt-auto">
+        {/* Hidden Categories Button */}
+        {hiddenCategoriesCount > 0 && (
+          <button
+            type="button"
+            onClick={handleShowHiddenModal}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 mb-2 rounded-md border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:border-zinc-600 transition-all text-xs font-medium"
+            title="숨김 카테고리 관리"
+          >
+            <Icons.EyeOff className="w-3.5 h-3.5" />
+            숨김 ({hiddenCategoriesCount})
+          </button>
+        )}
+
         <div className="flex items-center gap-2">
            <button
              type="button"
@@ -461,6 +593,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
         danger={true}
+      />
+
+      {/* Hidden Categories Modal */}
+      <HiddenCategoriesModal
+        isOpen={showHiddenModal}
+        hiddenCategories={hiddenCategories}
+        onUnhide={handleUnhideCategory}
+        onDelete={handlePermanentlyDeleteCategory}
+        onClose={() => setShowHiddenModal(false)}
       />
     </div>
   );
