@@ -62,7 +62,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
       <div className="bg-surface border border-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col shadow-black/50 max-h-[90vh]">
         
         {/* Content Area */}
-        <div className="p-6 flex-1 flex flex-col overflow-y-auto min-h-[600px]">
+        <div className="p-6 flex-1 flex flex-col overflow-y-auto min-h-[300px]">
           {isEditing ? (
             <textarea
               className="flex-1 w-full bg-black border border-border rounded-lg p-5 text-base text-white resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent custom-scrollbar leading-relaxed"
