@@ -516,7 +516,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Context Menu */}
             <div
-              className="fixed bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl z-50 min-w-[140px]"
+              className="fixed bg-white border border-gray-300 rounded-lg shadow-xl z-50 min-w-[140px]"
               style={{
                 left: `${Math.min(contextMenuPosition.x, window.innerWidth - 160)}px`,
                 top: `${Math.min(contextMenuPosition.y, window.innerHeight - 100)}px`,
@@ -525,14 +525,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <button
                 onClick={() => handleHideCategory(contextMenuCategoryId)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors first:rounded-t-lg"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 transition-colors first:rounded-t-lg"
               >
                 <Icons.EyeOff className="w-4 h-4" />
                 숨기기
               </button>
               <button
                 onClick={handleCancelContextMenu}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors border-t border-zinc-700 last:rounded-b-lg"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-200 last:rounded-b-lg"
               >
                 <Icons.Close className="w-4 h-4" />
                 취소

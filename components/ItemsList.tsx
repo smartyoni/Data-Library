@@ -201,19 +201,19 @@ const ItemsList: React.FC<ItemsListProps> = ({
                      {/* Dropdown Menu */}
                      {menuItemId === item.id && (
                        <div
-                         className="absolute right-0 top-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-10 min-w-[120px]"
+                         className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[120px]"
                          onClick={(e) => e.stopPropagation()}
                        >
                          <button
                            onClick={() => handleMobileMoveClick(item)}
-                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-yellow-500/15 transition-colors border-b border-zinc-700"
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-yellow-100 transition-colors border-b border-gray-200"
                          >
                            <Icons.ArrowRight className="w-4 h-4" />
                            이동
                          </button>
                          <button
                            onClick={() => handleMobileDeleteClick(item.id)}
-                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                          >
                            <Icons.Trash className="w-4 h-4" />
                            삭제
@@ -249,7 +249,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
        {/* Desktop Context Menu */}
        {contextMenuItemId && contextMenuPosition && (
          <div
-           className="fixed bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-50 min-w-[120px]"
+           className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[120px]"
            style={{
              left: `${contextMenuPosition.x}px`,
              top: `${contextMenuPosition.y}px`,
@@ -260,7 +260,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
              <>
                <button
                  onClick={() => handleContextMenuMove(localItems.find(item => item.id === contextMenuItemId)!)}
-                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-yellow-500/15 transition-colors border-b border-zinc-700"
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-yellow-100 transition-colors border-b border-gray-200"
                >
                  <Icons.ArrowRight className="w-4 h-4" />
                  이동
@@ -271,7 +271,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
                    setDeletingItemId(contextMenuItemId);
                    setDeleteConfirmOpen(true);
                  }}
-                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                >
                  <Icons.Trash className="w-4 h-4" />
                  삭제
