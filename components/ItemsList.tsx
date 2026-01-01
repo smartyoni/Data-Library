@@ -169,14 +169,14 @@ const ItemsList: React.FC<ItemsListProps> = ({
 
     const colorMap = {
       green: isSelected
-        ? 'bg-green-500/20 border-l-2 border-green-500'
-        : 'bg-green-500/10',
+        ? 'bg-green-500/40 border-l-2 border-green-500'
+        : 'bg-green-500/30',
       pink: isSelected
-        ? 'bg-pink-500/20 border-l-2 border-pink-500'
-        : 'bg-pink-500/10',
+        ? 'bg-pink-500/40 border-l-2 border-pink-500'
+        : 'bg-pink-500/30',
       gray: isSelected
-        ? 'bg-gray-400/20 border-l-2 border-gray-400'
-        : 'bg-gray-400/10'
+        ? 'bg-gray-400/40 border-l-2 border-gray-400'
+        : 'bg-gray-400/30'
     };
 
     return colorMap[item.status_color];
@@ -186,9 +186,9 @@ const ItemsList: React.FC<ItemsListProps> = ({
     if (!item.status_color) return 'hover:bg-emerald-500/15';
 
     const hoverMap = {
-      green: 'hover:bg-green-500/25',
-      pink: 'hover:bg-pink-500/25',
-      gray: 'hover:bg-gray-400/25'
+      green: 'hover:bg-green-500/50',
+      pink: 'hover:bg-pink-500/50',
+      gray: 'hover:bg-gray-400/50'
     };
 
     return hoverMap[item.status_color];
