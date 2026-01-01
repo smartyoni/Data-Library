@@ -21,6 +21,7 @@ export interface Item {
   title: string;
   description: string; // The text area content
   order: number;
+  status_color?: 'green' | 'pink' | 'gray';
   created_at: string;
 }
 

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Item } from '../types';
 import { Icons } from './ui/Icons';
 import ConfirmModal from './ConfirmModal';
+import firestoreDb from '../services/firestoreDb';
 
 interface ItemsListProps {
   categoryName: string | undefined;
@@ -36,6 +37,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [colorMenuItemId, setColorMenuItemId] = useState<string | null>(null);
+  const [colorMenuPosition, setColorMenuPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setLocalItems(items);
@@ -46,12 +49,13 @@ const ItemsList: React.FC<ItemsListProps> = ({
     const handleClickOutside = () => {
       setMenuItemId(null);
       setContextMenuItemId(null);
+      setColorMenuItemId(null);
     };
-    if (menuItemId || contextMenuItemId) {
+    if (menuItemId || contextMenuItemId || colorMenuItemId) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [menuItemId, contextMenuItemId]);
+  }, [menuItemId, contextMenuItemId, colorMenuItemId]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
     dragItem.current = position;
@@ -124,6 +128,72 @@ const ItemsList: React.FC<ItemsListProps> = ({
     setDeletingItemId(null);
   };
 
+  const handleColorClick = (e: React.MouseEvent | MouseEvent, itemId: string) => {
+    e.stopPropagation();
+    setMenuItemId(null);
+    setContextMenuItemId(null);
+    setColorMenuItemId(itemId);
+    setColorMenuPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleColorSelect = async (color: 'green' | 'pink' | 'gray') => {
+    if (colorMenuItemId) {
+      const item = localItems.find(i => i.id === colorMenuItemId);
+      if (item) {
+        await firestoreDb.items.update({ id: item.id, status_color: color });
+        setLocalItems(prev =>
+          prev.map(i => i.id === colorMenuItemId ? { ...i, status_color: color } : i)
+        );
+      }
+      setColorMenuItemId(null);
+      setColorMenuPosition(null);
+    }
+  };
+
+  const handleColorReset = async () => {
+    if (colorMenuItemId) {
+      const item = localItems.find(i => i.id === colorMenuItemId);
+      if (item) {
+        await firestoreDb.items.update({ id: item.id, status_color: undefined });
+        setLocalItems(prev =>
+          prev.map(i => i.id === colorMenuItemId ? { ...i, status_color: undefined } : i)
+        );
+      }
+      setColorMenuItemId(null);
+      setColorMenuPosition(null);
+    }
+  };
+
+  const getStatusBackgroundClass = (item: Item, isSelected: boolean): string => {
+    if (!item.status_color) return '';
+
+    const colorMap = {
+      green: isSelected
+        ? 'bg-green-500/20 border-l-2 border-green-500'
+        : 'bg-green-500/10',
+      pink: isSelected
+        ? 'bg-pink-500/20 border-l-2 border-pink-500'
+        : 'bg-pink-500/10',
+      gray: isSelected
+        ? 'bg-gray-400/20 border-l-2 border-gray-400'
+        : 'bg-gray-400/10'
+    };
+
+    return colorMap[item.status_color];
+  };
+
+  const getHoverClass = (item: Item): string => {
+    if (!item.status_color) return 'hover:bg-emerald-500/15';
+
+    const hoverMap = {
+      green: 'hover:bg-green-500/25',
+      pink: 'hover:bg-pink-500/25',
+      gray: 'hover:bg-gray-400/25'
+    };
+
+    return hoverMap[item.status_color];
+  };
+
   return (
     <div className="flex flex-col h-full w-full">
        {/* Header */}
@@ -166,9 +236,13 @@ const ItemsList: React.FC<ItemsListProps> = ({
                  onDrop={handleDrop}
                  onClick={() => onSelectItem(item.id)}
                  onContextMenu={(e) => handleContextMenu(e, item)}
-                 className={`group px-3 py-4 md:py-3 cursor-pointer hover:bg-emerald-500/15 transition-colors relative flex items-center gap-2 ${
-                   selectedItemId === item.id ? 'bg-zinc-900 border-l-2 border-accent' : 'border-l-2 border-transparent'
-                 }`}
+                 className={`
+                   group px-3 py-4 md:py-3 cursor-pointer transition-colors relative flex items-center gap-2
+                   ${getStatusBackgroundClass(item, selectedItemId === item.id)}
+                   ${getHoverClass(item)}
+                   ${selectedItemId === item.id && !item.status_color ? 'bg-zinc-900 border-l-2 border-accent' : ''}
+                   ${!item.status_color && selectedItemId !== item.id ? 'border-l-2 border-transparent' : ''}
+                 `.trim().replace(/\s+/g, ' ')}
                >
                  <div className="cursor-grab active:cursor-grabbing p-1 text-zinc-600 hover:text-zinc-400 hidden md:block">
                     <Icons.DragHandle className="w-4 h-4" />
@@ -210,6 +284,13 @@ const ItemsList: React.FC<ItemsListProps> = ({
                          >
                            <Icons.ArrowRight className="w-4 h-4" />
                            이동
+                         </button>
+                         <button
+                           onClick={(e) => handleColorClick(e, item.id)}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                         >
+                           <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 via-pink-500 to-gray-400" />
+                           진행색상
                          </button>
                          <button
                            onClick={() => handleMobileDeleteClick(item.id)}
@@ -266,6 +347,13 @@ const ItemsList: React.FC<ItemsListProps> = ({
                  이동
                </button>
                <button
+                 onClick={(e) => handleColorClick(e, contextMenuItemId)}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+               >
+                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 via-pink-500 to-gray-400" />
+                 진행색상
+               </button>
+               <button
                  onClick={() => {
                    setContextMenuItemId(null);
                    setDeletingItemId(contextMenuItemId);
@@ -278,6 +366,56 @@ const ItemsList: React.FC<ItemsListProps> = ({
                </button>
              </>
            )}
+         </div>
+       )}
+
+       {/* Color Palette Menu */}
+       {colorMenuItemId && colorMenuPosition && (
+         <div
+           className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-2"
+           style={{
+             left: `${colorMenuPosition.x}px`,
+             top: `${colorMenuPosition.y}px`,
+           }}
+           onClick={(e) => e.stopPropagation()}
+         >
+           <div className="flex flex-col gap-1">
+             <p className="text-xs text-gray-600 px-2 py-1 font-medium">진행 상태</p>
+
+             <button
+               onClick={() => handleColorSelect('green')}
+               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-green-50 transition-colors rounded"
+             >
+               <div className="w-4 h-4 rounded-full bg-green-500" />
+               <span>착수전</span>
+             </button>
+
+             <button
+               onClick={() => handleColorSelect('pink')}
+               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-pink-50 transition-colors rounded"
+             >
+               <div className="w-4 h-4 rounded-full bg-pink-500" />
+               <span>진행중</span>
+             </button>
+
+             <button
+               onClick={() => handleColorSelect('gray')}
+               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors rounded"
+             >
+               <div className="w-4 h-4 rounded-full bg-gray-300" />
+               <span>완료</span>
+             </button>
+
+             <div className="border-t border-gray-200 my-1"></div>
+
+             <button
+               onClick={handleColorReset}
+               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors rounded"
+             >
+               <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-dashed" />
+               <span>색상초기화</span>
+             </button>
+           </div>
          </div>
        )}
 
