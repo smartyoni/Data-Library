@@ -31,6 +31,7 @@ export interface ChecklistItem {
   text: string;
   is_checked: boolean;
   memo: string;
+  status_color?: 'green' | 'pink' | 'gray';
   created_at: string;
 }
 

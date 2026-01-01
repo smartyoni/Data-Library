@@ -23,6 +23,10 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [contextMenuChecklistId, setContextMenuChecklistId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
 
+  // Color palette state
+  const [colorMenuChecklistId, setColorMenuChecklistId] = useState<string | null>(null);
+  const [colorMenuPosition, setColorMenuPosition] = useState<{ x: number; y: number } | null>(null);
+
   // Clipboard context
   const { copyChecklistItem, pasteChecklistItem, hasClipboard } = useChecklistClipboard();
 
@@ -35,12 +39,13 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
     const handleClickOutside = () => {
       setMenuChecklistId(null);
       setContextMenuChecklistId(null);
+      setColorMenuChecklistId(null);
     };
-    if (menuChecklistId || contextMenuChecklistId) {
+    if (menuChecklistId || contextMenuChecklistId || colorMenuChecklistId) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [menuChecklistId, contextMenuChecklistId]);
+  }, [menuChecklistId, contextMenuChecklistId, colorMenuChecklistId]);
 
   const handleContextMenu = (e: React.MouseEvent, item: ChecklistItem) => {
     e.preventDefault();
@@ -58,6 +63,19 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const handlePasteClick = async () => {
     await pasteChecklistItem(itemId);
     await fetchItems();
+  };
+
+  const handleColorClick = (e: React.MouseEvent, itemId: string) => {
+    e.stopPropagation();
+    setColorMenuChecklistId(itemId);
+    setColorMenuPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleColorSelect = async (color: 'green' | 'pink' | 'gray') => {
+    if (colorMenuChecklistId) {
+      await handleUpdate(colorMenuChecklistId, { status_color: color });
+      setColorMenuChecklistId(null);
+    }
   };
 
   const fetchItems = async () => {
@@ -246,7 +264,14 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
 
       {/* List */}
       <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-        {items.map((item, index) => (
+        {items.map((item, index) => {
+          const statusColorClasses = {
+            green: 'border-l-4 border-l-green-500',
+            pink: 'border-l-4 border-l-pink-500',
+            gray: 'border-l-4 border-l-gray-300',
+          };
+
+          return (
           <div
             key={item.id}
             draggable
@@ -255,7 +280,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onContextMenu={(e) => handleContextMenu(e, item)}
-            className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30"
+            className={`group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30 ${item.status_color ? statusColorClasses[item.status_color] : ''}`}
           >
             {/* Desktop drag handle (hidden on mobile) */}
             <div className="hidden md:block cursor-grab active:cursor-grabbing pt-1 text-zinc-600 hover:text-zinc-400">
@@ -410,6 +435,13 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                       </button>
                     )}
                     <button
+                      onClick={(e) => handleColorClick(e, item.id)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 via-pink-500 to-gray-400" />
+                      진행색상
+                    </button>
+                    <button
                       onClick={() => handleDelete(item.id)}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
@@ -430,7 +462,8 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {items.length === 0 && (
           <div className="text-center py-8 border-2 border-dashed border-zinc-800/50 rounded-xl text-zinc-600 text-sm bg-zinc-900/20">
@@ -441,7 +474,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
         )}
 
         {/* Desktop Context Menu */}
-        {contextMenuChecklistId && contextMenuPosition && (
+        {contextMenuChecklistId && contextMenuPosition && !colorMenuChecklistId && (
           <div
             className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[120px]"
             style={{
@@ -469,6 +502,13 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                   </button>
                 )}
                 <button
+                  onClick={(e) => handleColorClick(e, contextMenuChecklistId)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                >
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 via-pink-500 to-gray-400" />
+                  진행색상
+                </button>
+                <button
                   onClick={() => {
                     setContextMenuChecklistId(null);
                     handleDelete(contextMenuChecklistId);
@@ -480,6 +520,43 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {/* Color Palette Menu */}
+        {colorMenuChecklistId && colorMenuPosition && (
+          <div
+            className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-2"
+            style={{
+              left: `${colorMenuPosition.x}px`,
+              top: `${colorMenuPosition.y}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-gray-600 px-2 py-1 font-medium">진행 상태</p>
+              <button
+                onClick={() => handleColorSelect('green')}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-green-50 transition-colors rounded"
+              >
+                <div className="w-4 h-4 rounded-full bg-green-500" />
+                <span>착수전</span>
+              </button>
+              <button
+                onClick={() => handleColorSelect('pink')}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-pink-50 transition-colors rounded"
+              >
+                <div className="w-4 h-4 rounded-full bg-pink-500" />
+                <span>진행중</span>
+              </button>
+              <button
+                onClick={() => handleColorSelect('gray')}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors rounded"
+              >
+                <div className="w-4 h-4 rounded-full bg-gray-300" />
+                <span>완료</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
