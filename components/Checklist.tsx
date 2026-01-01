@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from './ui/Icons';
 import { ChecklistItem } from '../types';
 import firestoreDb from '../services/firestoreDb';
+import { useChecklistClipboard } from '../contexts/ChecklistClipboardContext';
 
 interface ChecklistProps {
   itemId: string;
@@ -17,9 +18,47 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [editingItemText, setEditingItemText] = useState('');
   const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Context menu state for clipboard
+  const [menuChecklistId, setMenuChecklistId] = useState<string | null>(null);
+  const [contextMenuChecklistId, setContextMenuChecklistId] = useState<string | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Clipboard context
+  const { copyChecklistItem, pasteChecklistItem, hasClipboard } = useChecklistClipboard();
+
   // Drag and drop refs
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setMenuChecklistId(null);
+      setContextMenuChecklistId(null);
+    };
+    if (menuChecklistId || contextMenuChecklistId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [menuChecklistId, contextMenuChecklistId]);
+
+  const handleContextMenu = (e: React.MouseEvent, item: ChecklistItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuChecklistId(item.id);
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleCopyClick = (item: ChecklistItem) => {
+    copyChecklistItem(item);
+    setMenuChecklistId(null);
+    setContextMenuChecklistId(null);
+  };
+
+  const handlePasteClick = async () => {
+    await pasteChecklistItem(itemId);
+    await fetchItems();
+  };
 
   const fetchItems = async () => {
     const data = await firestoreDb.checklist.listByItem(itemId);
@@ -193,6 +232,16 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
         >
           <Icons.Plus className="w-5 h-5" />
         </button>
+        {hasClipboard && (
+          <button
+            onClick={handlePasteClick}
+            className="flex-shrink-0 p-2.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 hover:border-green-500/50 transition-all flex items-center gap-1.5"
+            title="복사된 항목 붙여넣기"
+          >
+            <Icons.Clipboard className="w-5 h-5" />
+            <span className="text-xs">붙여넣기</span>
+          </button>
+        )}
       </div>
 
       {/* List */}
@@ -205,6 +254,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             onDragEnter={(e) => handleDragEnter(e, index)}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
+            onContextMenu={(e) => handleContextMenu(e, item)}
             className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30"
           >
             {/* Desktop drag handle (hidden on mobile) */}
@@ -323,9 +373,57 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
               >
                 <Icons.Memo className="w-4 h-4" />
               </button>
+
+              {/* Mobile 3-point Menu */}
+              <div className="relative md:hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuChecklistId(menuChecklistId === item.id ? null : item.id);
+                  }}
+                  className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-700 rounded transition-colors"
+                  title="옵션"
+                >
+                  <Icons.More className="w-4 h-4" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {menuChecklistId === item.id && (
+                  <div
+                    className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[120px]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => handleCopyClick(item)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 transition-colors border-b border-gray-200"
+                    >
+                      <Icons.Copy className="w-4 h-4" />
+                      복사
+                    </button>
+                    {hasClipboard && (
+                      <button
+                        onClick={handlePasteClick}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-green-50 transition-colors border-b border-gray-200"
+                      >
+                        <Icons.Clipboard className="w-4 h-4" />
+                        붙여넣기
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Icons.Trash className="w-4 h-4" />
+                      삭제
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Delete Button */}
               <button
                 onClick={() => handleDelete(item.id)}
-                className="p-1.5 text-zinc-500 hover:text-danger hover:bg-zinc-700 rounded transition-colors"
+                className="hidden md:block p-1.5 text-zinc-500 hover:text-danger hover:bg-zinc-700 rounded transition-colors"
                 title="삭제"
               >
                 <Icons.Trash className="w-4 h-4" />
@@ -339,6 +437,49 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             등록된 항목이 없습니다.
             <br />
             <span className="text-xs text-zinc-700 mt-1 block">위 입력창에서 할 일을 추가해보세요.</span>
+          </div>
+        )}
+
+        {/* Desktop Context Menu */}
+        {contextMenuChecklistId && contextMenuPosition && (
+          <div
+            className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[120px]"
+            style={{
+              left: `${contextMenuPosition.x}px`,
+              top: `${contextMenuPosition.y}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {items.find(item => item.id === contextMenuChecklistId) && (
+              <>
+                <button
+                  onClick={() => handleCopyClick(items.find(item => item.id === contextMenuChecklistId)!)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 transition-colors border-b border-gray-200"
+                >
+                  <Icons.Copy className="w-4 h-4" />
+                  복사
+                </button>
+                {hasClipboard && (
+                  <button
+                    onClick={handlePasteClick}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-green-50 transition-colors border-b border-gray-200"
+                  >
+                    <Icons.Clipboard className="w-4 h-4" />
+                    붙여넣기
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setContextMenuChecklistId(null);
+                    handleDelete(contextMenuChecklistId);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <Icons.Trash className="w-4 h-4" />
+                  삭제
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

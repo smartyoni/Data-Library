@@ -5,6 +5,7 @@ import ItemDetail from './ItemDetail';
 import BookmarkManager from './BookmarkManager';
 import MemoModal from './MemoModal';
 import MoveItemModal from './MoveItemModal';
+import { ChecklistClipboardProvider } from '../contexts/ChecklistClipboardContext';
 import { Category, Item, ChecklistItem, Workspace } from '../types';
 import firestoreDb from '../services/firestoreDb';
 import { Icons } from './ui/Icons';
@@ -253,7 +254,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   const showItemDetail = !!selectedItemId; // Mobile: Show if item selected
 
   return (
-    <div className="flex h-full w-full bg-background text-zinc-100 font-sans selection:bg-accent/30 overflow-hidden relative">
+    <ChecklistClipboardProvider itemId={selectedItemId || ''}>
+      <div className="flex h-full w-full bg-background text-zinc-100 font-sans selection:bg-accent/30 overflow-hidden relative">
       {/* Column 1: Categories */}
       {/* Mobile: Hidden if category selected or bookmarks shown. Desktop: Always visible (w-64) */}
       <div className={`${selectedCategoryId || showBookmarks ? 'hidden md:flex' : 'flex'} w-full md:w-64 flex-col border-r border-border bg-surface`}>
@@ -329,20 +331,21 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
         onSave={saveMemo}
       />
 
-      {/* Global Move Item Modal */}
-      <MoveItemModal
-        isOpen={moveItemModalOpen}
-        item={itemToMove}
-        currentWorkspaceId={workspace.id}
-        currentCategoryId={selectedCategoryId || ''}
-        allWorkspaces={allWorkspaces}
-        onMove={handleExecuteMove}
-        onClose={() => {
-          setMoveItemModalOpen(false);
-          setItemToMove(null);
-        }}
-      />
-    </div>
+        {/* Global Move Item Modal */}
+        <MoveItemModal
+          isOpen={moveItemModalOpen}
+          item={itemToMove}
+          currentWorkspaceId={workspace.id}
+          currentCategoryId={selectedCategoryId || ''}
+          allWorkspaces={allWorkspaces}
+          onMove={handleExecuteMove}
+          onClose={() => {
+            setMoveItemModalOpen(false);
+            setItemToMove(null);
+          }}
+        />
+      </div>
+    </ChecklistClipboardProvider>
   );
 };
 

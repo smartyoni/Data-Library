@@ -20,7 +20,9 @@ import {
   Bookmark,
   Link,
   Home,
-  EyeOff
+  EyeOff,
+  Copy,
+  Clipboard
 } from 'lucide-react';
 
 export const Icons = {
@@ -45,5 +47,7 @@ export const Icons = {
   Bookmark,
   Link,
   Home,
-  EyeOff
+  EyeOff,
+  Copy,
+  Clipboard
 };
