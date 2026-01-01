@@ -148,6 +148,7 @@ const App: React.FC = () => {
         {activeWorkspace ? (
           <WorkspaceView
             workspace={activeWorkspace}
+            allWorkspaces={workspaces}
             onDelete={handleDeleteWorkspace}
             onUpdate={handleUpdateWorkspace}
             onShowBookmarks={() => setIsBookmarkViewActive(true)}

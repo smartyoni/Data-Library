@@ -10,6 +10,7 @@ interface ItemsListProps {
   onSelectItem: (id: string) => void;
   onAddItem: () => void;
   onDeleteItem: (id: string) => void;
+  onMoveItem: (item: Item) => void;
   onReorder: (newOrder: Item[]) => void;
   loading: boolean;
   onBack: () => void;
@@ -22,6 +23,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
   onSelectItem,
   onAddItem,
   onDeleteItem,
+  onMoveItem,
   onReorder,
   loading,
   onBack
@@ -30,6 +32,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
   const dragOverItem = useRef<number | null>(null);
   const [localItems, setLocalItems] = useState<Item[]>(items);
   const [menuItemId, setMenuItemId] = useState<string | null>(null);
+  const [contextMenuItemId, setContextMenuItemId] = useState<string | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
@@ -39,12 +43,15 @@ const ItemsList: React.FC<ItemsListProps> = ({
 
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setMenuItemId(null);
-    if (menuItemId) {
+    const handleClickOutside = () => {
+      setMenuItemId(null);
+      setContextMenuItemId(null);
+    };
+    if (menuItemId || contextMenuItemId) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [menuItemId]);
+  }, [menuItemId, contextMenuItemId]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
     dragItem.current = position;
@@ -85,6 +92,23 @@ const ItemsList: React.FC<ItemsListProps> = ({
     setMenuItemId(null);
     setDeletingItemId(id);
     setDeleteConfirmOpen(true);
+  };
+
+  const handleMobileMoveClick = (item: Item) => {
+    setMenuItemId(null);
+    onMoveItem(item);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, item: Item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuItemId(item.id);
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleContextMenuMove = (item: Item) => {
+    setContextMenuItemId(null);
+    onMoveItem(item);
   };
 
   const confirmDelete = () => {
@@ -141,7 +165,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
                  onDragOver={handleDragOver}
                  onDrop={handleDrop}
                  onClick={() => onSelectItem(item.id)}
-                 className={`group px-3 py-4 md:py-3 cursor-pointer hover:bg-zinc-900 transition-colors relative flex items-center gap-2 ${
+                 onContextMenu={(e) => handleContextMenu(e, item)}
+                 className={`group px-3 py-4 md:py-3 cursor-pointer hover:bg-emerald-500/15 transition-colors relative flex items-center gap-2 ${
                    selectedItemId === item.id ? 'bg-zinc-900 border-l-2 border-accent' : 'border-l-2 border-transparent'
                  }`}
                >
@@ -180,6 +205,13 @@ const ItemsList: React.FC<ItemsListProps> = ({
                          onClick={(e) => e.stopPropagation()}
                        >
                          <button
+                           onClick={() => handleMobileMoveClick(item)}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-yellow-500/15 transition-colors border-b border-zinc-700"
+                         >
+                           <Icons.ArrowRight className="w-4 h-4" />
+                           이동
+                         </button>
+                         <button
                            onClick={() => handleMobileDeleteClick(item.id)}
                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                          >
@@ -213,6 +245,41 @@ const ItemsList: React.FC<ItemsListProps> = ({
            </div>
          )}
        </div>
+
+       {/* Desktop Context Menu */}
+       {contextMenuItemId && contextMenuPosition && (
+         <div
+           className="fixed bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg z-50 min-w-[120px]"
+           style={{
+             left: `${contextMenuPosition.x}px`,
+             top: `${contextMenuPosition.y}px`,
+           }}
+           onClick={(e) => e.stopPropagation()}
+         >
+           {localItems.find(item => item.id === contextMenuItemId) && (
+             <>
+               <button
+                 onClick={() => handleContextMenuMove(localItems.find(item => item.id === contextMenuItemId)!)}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-yellow-500/15 transition-colors border-b border-zinc-700"
+               >
+                 <Icons.ArrowRight className="w-4 h-4" />
+                 이동
+               </button>
+               <button
+                 onClick={() => {
+                   setContextMenuItemId(null);
+                   setDeletingItemId(contextMenuItemId);
+                   setDeleteConfirmOpen(true);
+                 }}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+               >
+                 <Icons.Trash className="w-4 h-4" />
+                 삭제
+               </button>
+             </>
+           )}
+         </div>
+       )}
 
        {/* Delete Confirm Modal */}
        <ConfirmModal

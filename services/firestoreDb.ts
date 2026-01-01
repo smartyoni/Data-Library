@@ -442,6 +442,34 @@ export const firestoreDb = {
         throw error;
       }
     },
+
+    move: async (itemId: string, targetCategoryId: string): Promise<void> => {
+      try {
+        const batch = writeBatch(db);
+
+        // Get target category's existing items to calculate new order
+        const targetItemsQuery = query(
+          collection(db, COLLECTIONS.ITEMS),
+          where('category_id', '==', targetCategoryId)
+        );
+        const targetSnapshot = await getDocs(targetItemsQuery);
+        const targetItems = targetSnapshot.docs.map(doc => doc.data() as Item);
+        const maxOrder = targetItems.reduce((max, item) => Math.max(max, item.order ?? 0), -1);
+
+        // Update item's category_id and order
+        const itemRef = doc(db, COLLECTIONS.ITEMS, itemId);
+        batch.update(itemRef, {
+          category_id: targetCategoryId,
+          order: maxOrder + 1
+        });
+
+        // Note: Checklists don't need updating - they're linked by item_id
+        await batch.commit();
+      } catch (error) {
+        console.error('항목 이동 실패:', error);
+        throw error;
+      }
+    },
   },
 
   checklist: {

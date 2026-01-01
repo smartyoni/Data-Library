@@ -4,12 +4,14 @@ import ItemsList from './ItemsList';
 import ItemDetail from './ItemDetail';
 import BookmarkManager from './BookmarkManager';
 import MemoModal from './MemoModal';
+import MoveItemModal from './MoveItemModal';
 import { Category, Item, ChecklistItem, Workspace } from '../types';
 import firestoreDb from '../services/firestoreDb';
 import { Icons } from './ui/Icons';
 
 interface WorkspaceViewProps {
   workspace: Workspace;
+  allWorkspaces: Workspace[];
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Workspace>) => void;
   onShowBookmarks: () => void;
@@ -25,6 +27,7 @@ interface WorkspaceViewProps {
 
 const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   workspace,
+  allWorkspaces,
   onDelete,
   onUpdate,
   onShowBookmarks,
@@ -46,6 +49,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   // Modal State
   const [isMemoModalOpen, setMemoModalOpen] = useState(false);
   const [currentMemoItem, setCurrentMemoItem] = useState<ChecklistItem | null>(null);
+  const [moveItemModalOpen, setMoveItemModalOpen] = useState(false);
+  const [itemToMove, setItemToMove] = useState<Item | null>(null);
 
   // Load categories when workspace changes
   useEffect(() => {
@@ -165,6 +170,39 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   };
 
+  const handleMoveItemRequest = (item: Item) => {
+    setItemToMove(item);
+    setMoveItemModalOpen(true);
+  };
+
+  const handleExecuteMove = async (targetCategoryId: string, targetWorkspaceId: string) => {
+    if (!itemToMove) return;
+
+    try {
+      await firestoreDb.items.move(itemToMove.id, targetCategoryId);
+
+      // Update local state
+      if (targetCategoryId === selectedCategoryId) {
+        // Moving within same category - reload items
+        if (selectedCategoryId) {
+          loadItems(selectedCategoryId);
+        }
+      } else {
+        // Moving to different category - remove from current list
+        setItems(prev => prev.filter(i => i.id !== itemToMove.id));
+        if (selectedItemId === itemToMove.id) {
+          setSelectedItemId(null);
+        }
+      }
+
+      setMoveItemModalOpen(false);
+      setItemToMove(null);
+    } catch (error) {
+      console.error('항목 이동 실패:', error);
+      alert('항목 이동에 실패했습니다.');
+    }
+  };
+
   const openMemo = (item: ChecklistItem) => {
     setCurrentMemoItem(item);
     setMemoModalOpen(true);
@@ -238,13 +276,14 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
       {/* Mobile: Visible if category selected & no item selected & bookmarks not shown. Desktop: Visible if category selected (w-80) or placeholder */}
       <div className={`${selectedCategoryId && !selectedItemId && !showBookmarks ? 'flex' : 'hidden md:flex'} ${selectedCategoryId ? 'w-full md:w-80' : 'hidden md:flex md:w-80'} flex-col border-r border-border bg-background`}>
         {selectedCategoryId ? (
-          <ItemsList 
+          <ItemsList
             categoryName={selectedCategory?.name}
             items={items}
             selectedItemId={selectedItemId}
             onSelectItem={setSelectedItemId}
             onAddItem={handleAddItem}
             onDeleteItem={handleDeleteItem}
+            onMoveItem={handleMoveItemRequest}
             onReorder={handleReorderItems}
             loading={loadingItems}
             onBack={handleBackToCategories}
@@ -288,6 +327,20 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
         onClose={() => setMemoModalOpen(false)}
         checklistItem={currentMemoItem}
         onSave={saveMemo}
+      />
+
+      {/* Global Move Item Modal */}
+      <MoveItemModal
+        isOpen={moveItemModalOpen}
+        item={itemToMove}
+        currentWorkspaceId={workspace.id}
+        currentCategoryId={selectedCategoryId || ''}
+        allWorkspaces={allWorkspaces}
+        onMove={handleExecuteMove}
+        onClose={() => {
+          setMoveItemModalOpen(false);
+          setItemToMove(null);
+        }}
       />
     </div>
   );
