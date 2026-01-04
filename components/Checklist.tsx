@@ -16,7 +16,6 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState('');
-  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Context menu state for clipboard
   const [menuChecklistId, setMenuChecklistId] = useState<string | null>(null);
@@ -126,20 +125,6 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
 
   const handleTextDoubleClick = (id: string, currentText: string) => {
     handleStartEdit(id, currentText);
-  };
-
-  // Long press handlers for mobile
-  const handleTouchStart = (id: string, currentText: string) => {
-    longPressTimerRef.current = setTimeout(() => {
-      handleStartEdit(id, currentText);
-    }, 300);
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
   };
 
   // Drag and drop handlers
@@ -322,9 +307,12 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                 />
               ) : (
                 <div
-                  onDoubleClick={() => handleTextDoubleClick(item.id, item.text)}
-                  onTouchStart={() => handleTouchStart(item.id, item.text)}
-                  onTouchEnd={handleTouchEnd}
+                  onDoubleClick={(e) => {
+                    // Desktop only (768px 이상)
+                    if (window.innerWidth >= 768) {
+                      handleTextDoubleClick(item.id, item.text);
+                    }
+                  }}
                   className={`w-full p-0 text-sm cursor-text ${
                     item.is_checked ? 'text-black line-through decoration-black' : 'text-zinc-200'
                   }`}
@@ -395,6 +383,16 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
+                      onClick={() => {
+                        handleStartEdit(item.id, item.text);
+                        setMenuChecklistId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                    >
+                      <Icons.Edit className="w-4 h-4" />
+                      수정
+                    </button>
+                    <button
                       onClick={() => handleCopyClick(item)}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 transition-colors border-b border-gray-200"
                     >
@@ -454,6 +452,19 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
           >
             {items.find(item => item.id === contextMenuChecklistId) && (
               <>
+                <button
+                  onClick={() => {
+                    const item = items.find(i => i.id === contextMenuChecklistId);
+                    if (item) {
+                      handleStartEdit(item.id, item.text);
+                      setContextMenuChecklistId(null);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                >
+                  <Icons.Edit className="w-4 h-4" />
+                  수정
+                </button>
                 <button
                   onClick={() => handleCopyClick(items.find(item => item.id === contextMenuChecklistId)!)}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 transition-colors border-b border-gray-200"
