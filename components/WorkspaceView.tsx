@@ -204,6 +204,28 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
     }
   };
 
+  const handleExecuteMoveCategory = async (categoryId: string, targetWorkspaceId: string) => {
+    try {
+      await firestoreDb.categories.move(categoryId, targetWorkspaceId);
+
+      // Refresh categories in current workspace
+      await loadCategories();
+
+      // Clear selection if moved category was selected
+      if (selectedCategoryId === categoryId) {
+        setSelectedCategoryId(null);
+        setItems([]);
+        setSelectedItemId(null);
+      }
+
+      alert('카테고리가 성공적으로 이동되었습니다.');
+    } catch (error: any) {
+      console.error('카테고리 이동 실패:', error);
+      const errorMessage = error?.message || '카테고리 이동에 실패했습니다.';
+      alert(errorMessage);
+    }
+  };
+
   const openMemo = (item: ChecklistItem) => {
     setCurrentMemoItem(item);
     setMemoModalOpen(true);
@@ -271,6 +293,9 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
           onToggleLock={handleToggleLock}
           onShowBookmarks={onShowBookmarks}
           hiddenCategoriesCount={hiddenCategoriesCount}
+          allWorkspaces={allWorkspaces}
+          currentWorkspaceId={workspace.id}
+          onMoveCategory={handleExecuteMoveCategory}
         />
       </div>
 
