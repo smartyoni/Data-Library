@@ -67,6 +67,20 @@ const ItemsList: React.FC<ItemsListProps> = ({
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    // Check if dragging within same color group for visual feedback
+    const draggedItem = sortedActiveItems[dragItem.current ?? -1];
+    const targetItem = sortedActiveItems[position];
+
+    if (draggedItem && targetItem) {
+      const draggedColor = draggedItem.status_color || 'undefined';
+      const targetColor = targetItem.status_color || 'undefined';
+
+      if (draggedColor !== targetColor) {
+        e.dataTransfer.dropEffect = "none"; // Show "not allowed" cursor
+        return;
+      }
+    }
+
     dragOverItem.current = position;
     e.preventDefault();
   };
@@ -82,13 +96,33 @@ const ItemsList: React.FC<ItemsListProps> = ({
     const end = dragOverItem.current;
 
     if (start !== null && end !== null && start !== end) {
-      const _items = [...localItems];
+      // Check if dragging within same color group
+      const draggedItem = sortedActiveItems[start];
+      const targetItem = sortedActiveItems[end];
+
+      const draggedColor = draggedItem.status_color || 'undefined';
+      const targetColor = targetItem.status_color || 'undefined';
+
+      // Only allow drop within same color group
+      if (draggedColor !== targetColor) {
+        dragItem.current = null;
+        dragOverItem.current = null;
+        return; // Prevent drop
+      }
+
+      // Reorder within sortedActiveItems
+      const _items = [...sortedActiveItems];
       const draggedItemContent = _items[start];
       _items.splice(start, 1);
       _items.splice(end, 0, draggedItemContent);
 
-      setLocalItems(_items);
-      onReorder(_items);
+      // Update localItems with new order
+      // Need to merge back with completed items (gray)
+      const completedItems = localItems.filter(item => item.status_color === 'gray');
+      const allItems = [..._items, ...completedItems];
+
+      setLocalItems(allItems);
+      onReorder(allItems);
     }
 
     dragItem.current = null;
@@ -170,6 +204,27 @@ const ItemsList: React.FC<ItemsListProps> = ({
   // Completed items logic
   const activeItems = localItems.filter(item => item.status_color !== 'gray');
   const completedCount = localItems.filter(item => item.status_color === 'gray').length;
+
+  // Sort active items by status_color, then by order
+  const sortedActiveItems = [...activeItems].sort((a, b) => {
+    // Define color priority: pink (진행중) -> green (착수전) -> no color
+    const colorPriority: Record<string, number> = {
+      'pink': 1,   // 진행중 - highest priority
+      'green': 2,  // 착수전
+      'undefined': 3  // no color - lowest priority
+    };
+
+    const aPriority = colorPriority[a.status_color || 'undefined'];
+    const bPriority = colorPriority[b.status_color || 'undefined'];
+
+    // First sort by color priority
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+
+    // Within same color group, sort by order field
+    return (a.order ?? 0) - (b.order ?? 0);
+  });
 
   const loadCompletedItems = () => {
     const completed = localItems.filter(item => item.status_color === 'gray');
@@ -260,9 +315,9 @@ const ItemsList: React.FC<ItemsListProps> = ({
            <div className="p-4 space-y-3 opacity-50">
              {[1,2,3].map(i => <div key={i} className="h-12 bg-zinc-800/50 rounded animate-pulse" />)}
            </div>
-         ) : activeItems.length > 0 ? (
+         ) : sortedActiveItems.length > 0 ? (
            <div className="divide-y divide-border/50">
-             {activeItems.map((item, index) => (
+             {sortedActiveItems.map((item, index) => (
                <div
                  key={item.id}
                  draggable
