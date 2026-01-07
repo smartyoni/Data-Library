@@ -8,6 +8,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   writeBatch,
   serverTimestamp,
   Timestamp,
@@ -328,6 +329,52 @@ export const firestoreDb = {
         await updateDoc(docRef, { is_hidden: false });
       } catch (error) {
         console.error('Category 복원 실패:', error);
+        throw error;
+      }
+    },
+
+    move: async (categoryId: string, targetWorkspaceId: string): Promise<void> => {
+      try {
+        // Validate inputs
+        if (!categoryId || !targetWorkspaceId) {
+          throw new Error('카테고리 ID와 대상 워크스페이스 ID가 필요합니다.');
+        }
+
+        // Check if category exists
+        const categoryDoc = await getDoc(doc(db, COLLECTIONS.CATEGORIES, categoryId));
+        if (!categoryDoc.exists()) {
+          throw new Error('카테고리를 찾을 수 없습니다.');
+        }
+
+        // Check if target workspace exists
+        const workspaceDoc = await getDoc(doc(db, COLLECTIONS.WORKSPACES, targetWorkspaceId));
+        if (!workspaceDoc.exists()) {
+          throw new Error('대상 워크스페이스를 찾을 수 없습니다.');
+        }
+
+        const batch = writeBatch(db);
+
+        // Get target workspace's existing categories to calculate new order
+        const targetCategoriesQuery = query(
+          collection(db, COLLECTIONS.CATEGORIES),
+          where('workspace_id', '==', targetWorkspaceId)
+        );
+        const targetSnapshot = await getDocs(targetCategoriesQuery);
+        const targetCategories = targetSnapshot.docs.map(doc => doc.data() as Category);
+        const maxOrder = targetCategories.reduce((max, cat) => Math.max(max, cat.order ?? 0), -1);
+
+        // Update category's workspace_id and order
+        const categoryRef = doc(db, COLLECTIONS.CATEGORIES, categoryId);
+        batch.update(categoryRef, {
+          workspace_id: targetWorkspaceId,
+          order: maxOrder + 1,
+          is_hidden: false // Unhide when moving to new workspace
+        });
+
+        // Note: Items and checklists don't need updating - they're linked by category_id
+        await batch.commit();
+      } catch (error) {
+        console.error('카테고리 이동 실패:', error);
         throw error;
       }
     },

@@ -22,7 +22,8 @@ import {
   Home,
   EyeOff,
   Copy,
-  Clipboard
+  Clipboard,
+  Pencil
 } from 'lucide-react';
 
 export const Icons = {
@@ -49,5 +50,6 @@ export const Icons = {
   Home,
   EyeOff,
   Copy,
-  Clipboard
+  Clipboard,
+  Edit: Pencil
 };

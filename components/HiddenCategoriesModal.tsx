@@ -7,6 +7,7 @@ interface HiddenCategoriesModalProps {
   hiddenCategories: Category[];
   onUnhide: (id: string) => void;
   onDelete: (id: string) => void;
+  onMove: (id: string) => void;
   onClose: () => void;
 }
 
@@ -15,6 +16,7 @@ const HiddenCategoriesModal: React.FC<HiddenCategoriesModalProps> = ({
   hiddenCategories,
   onUnhide,
   onDelete,
+  onMove,
   onClose,
 }) => {
   if (!isOpen) return null;
@@ -64,15 +66,22 @@ const HiddenCategoriesModal: React.FC<HiddenCategoriesModalProps> = ({
 
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                     <button
+                      onClick={() => onMove(cat.id)}
+                      className="px-3 py-1.5 rounded bg-yellow-500/20 text-yellow-600 hover:bg-yellow-500/30 transition-colors text-xs font-medium whitespace-nowrap"
+                      title="다른 탭으로 이동"
+                    >
+                      이동
+                    </button>
+                    <button
                       onClick={() => onUnhide(cat.id)}
-                      className="px-3 py-1.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs font-medium whitespace-nowrap"
+                      className="px-3 py-1.5 rounded bg-blue-500/20 text-blue-600 hover:bg-blue-500/30 transition-colors text-xs font-medium whitespace-nowrap"
                       title="카테고리 복원"
                     >
                       복원
                     </button>
                     <button
                       onClick={() => onDelete(cat.id)}
-                      className="px-3 py-1.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs font-medium whitespace-nowrap"
+                      className="px-3 py-1.5 rounded bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors text-xs font-medium whitespace-nowrap"
                       title="카테고리 영구 삭제"
                     >
                       삭제

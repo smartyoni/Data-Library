@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Category } from '../types';
+import { Category, Workspace } from '../types';
 import { Icons } from './ui/Icons';
 import firestoreDb from '../services/firestoreDb';
 import { Lock, Unlock, Home } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import HiddenCategoriesModal from './HiddenCategoriesModal';
+import MoveCategoryModal from './MoveCategoryModal';
 
 interface SidebarProps {
   categories: Category[];
@@ -18,6 +19,9 @@ interface SidebarProps {
   onToggleLock: () => void;
   onShowBookmarks?: () => void;
   hiddenCategoriesCount?: number;
+  allWorkspaces: Workspace[];
+  currentWorkspaceId: string;
+  onMoveCategory: (categoryId: string, targetWorkspaceId: string) => Promise<void>;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -31,7 +35,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDeleteWorkspace,
   onToggleLock,
   onShowBookmarks,
-  hiddenCategoriesCount = 0
+  hiddenCategoriesCount = 0,
+  allWorkspaces,
+  currentWorkspaceId,
+  onMoveCategory,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -45,6 +52,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [showHiddenModal, setShowHiddenModal] = useState(false);
   const [hiddenCategories, setHiddenCategories] = useState<Category[]>([]);
+  const [moveCategoryModalOpen, setMoveCategoryModalOpen] = useState(false);
+  const [categoryToMove, setCategoryToMove] = useState<Category | null>(null);
+  const [categoryItemCount, setCategoryItemCount] = useState(0);
 
   // Drag and drop refs
   const dragItem = useRef<number | null>(null);
@@ -201,6 +211,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       } catch (error) {
         console.error('카테고리 삭제 실패:', error);
       }
+    }
+  };
+
+  const handleMoveCategory = async (categoryId: string) => {
+    try {
+      const items = await firestoreDb.items.listByCategory(categoryId);
+      const category = localCategories.find(c => c.id === categoryId);
+
+      if (category) {
+        setCategoryToMove(category);
+        setCategoryItemCount(items.length);
+        setMoveCategoryModalOpen(true);
+        setContextMenuCategoryId(null);
+        setMenuCategoryId(null);
+      }
+    } catch (error) {
+      console.error('카테고리 이동 준비 실패:', error);
     }
   };
 
@@ -448,17 +475,27 @@ const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <button
                         onClick={() => {
+                          handleMoveCategory(cat.id);
+                          setMenuCategoryId(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-yellow-500/10 transition-colors border-b border-zinc-800"
+                      >
+                        <Icons.ArrowRight className="w-4 h-4" />
+                        이동
+                      </button>
+                      <button
+                        onClick={() => {
                           handleHideCategory(cat.id);
                           setMenuCategoryId(null);
                         }}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors border-b border-zinc-800"
                       >
                         <Icons.EyeOff className="w-4 h-4" />
                         숨기기
                       </button>
                       <button
                         onClick={() => handleMobileDeleteClick(cat.id)}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-zinc-800"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                       >
                         <Icons.Trash className="w-4 h-4" />
                         삭제
@@ -519,20 +556,27 @@ const Sidebar: React.FC<SidebarProps> = ({
               className="fixed bg-white border border-gray-300 rounded-lg shadow-xl z-50 min-w-[140px]"
               style={{
                 left: `${Math.min(contextMenuPosition.x, window.innerWidth - 160)}px`,
-                top: `${Math.min(contextMenuPosition.y, window.innerHeight - 100)}px`,
+                top: `${Math.min(contextMenuPosition.y, window.innerHeight - 120)}px`,
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
+                onClick={() => handleMoveCategory(contextMenuCategoryId)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-yellow-100 transition-colors first:rounded-t-lg border-b border-gray-200"
+              >
+                <Icons.ArrowRight className="w-4 h-4" />
+                이동
+              </button>
+              <button
                 onClick={() => handleHideCategory(contextMenuCategoryId)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 transition-colors first:rounded-t-lg"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 transition-colors border-b border-gray-200"
               >
                 <Icons.EyeOff className="w-4 h-4" />
                 숨기기
               </button>
               <button
                 onClick={handleCancelContextMenu}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-200 last:rounded-b-lg"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors last:rounded-b-lg"
               >
                 <Icons.Close className="w-4 h-4" />
                 취소
@@ -595,12 +639,33 @@ const Sidebar: React.FC<SidebarProps> = ({
         danger={true}
       />
 
+      {/* Move Category Modal */}
+      <MoveCategoryModal
+        isOpen={moveCategoryModalOpen}
+        category={categoryToMove}
+        currentWorkspaceId={currentWorkspaceId}
+        allWorkspaces={allWorkspaces}
+        itemCount={categoryItemCount}
+        onMove={async (targetWorkspaceId) => {
+          await onMoveCategory(categoryToMove!.id, targetWorkspaceId);
+          setMoveCategoryModalOpen(false);
+          setCategoryToMove(null);
+          setCategoryItemCount(0);
+        }}
+        onClose={() => {
+          setMoveCategoryModalOpen(false);
+          setCategoryToMove(null);
+          setCategoryItemCount(0);
+        }}
+      />
+
       {/* Hidden Categories Modal */}
       <HiddenCategoriesModal
         isOpen={showHiddenModal}
         hiddenCategories={hiddenCategories}
         onUnhide={handleUnhideCategory}
         onDelete={handlePermanentlyDeleteCategory}
+        onMove={handleMoveCategory}
         onClose={() => setShowHiddenModal(false)}
       />
     </div>
