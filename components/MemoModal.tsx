@@ -58,8 +58,8 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 md:p-4">
-      <div className="bg-surface border border-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col shadow-black/50 h-[80vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 md:p-4" onClick={onClose}>
+      <div className="bg-surface border border-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col shadow-black/50 h-[80vh]" onClick={(e) => e.stopPropagation()}>
         
         {/* Content Area */}
         <div className="p-3 flex-1 flex flex-col overflow-y-auto">
