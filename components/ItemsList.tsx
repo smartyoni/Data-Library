@@ -362,21 +362,26 @@ const ItemsList: React.FC<ItemsListProps> = ({
            </div>
          )}
 
-       {/* Completed Items Button */}
-       {completedCount > 0 && (
-         <div className="px-4 py-3 border-t border-border bg-background/50">
-           <button
-             onClick={() => {
+       {/* Completed Items Button - Always at bottom */}
+       <div className="px-4 py-3 border-t border-border bg-background/50 flex-shrink-0">
+         <button
+           onClick={() => {
+             if (completedCount > 0) {
                loadCompletedItems();
                setShowCompletedModal(true);
-             }}
-             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors text-sm text-gray-700 font-medium"
-           >
-             <Icons.CheckCircle className="w-4 h-4" />
-             <span>완료 ({completedCount})</span>
-           </button>
-         </div>
-       )}
+             }
+           }}
+           disabled={completedCount === 0}
+           className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+             completedCount > 0
+               ? 'bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 cursor-pointer'
+               : 'bg-gray-50 border border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+           }`}
+         >
+           <Icons.CheckCircle className="w-4 h-4" />
+           <span>완료 ({completedCount})</span>
+         </button>
+       </div>
        </div>
 
        {/* Desktop Context Menu */}
