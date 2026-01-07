@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Item } from '../types';
 import { Icons } from './ui/Icons';
 import ConfirmModal from './ConfirmModal';
+import CompletedItemsModal from './CompletedItemsModal';
 import firestoreDb from '../services/firestoreDb';
 
 interface ItemsListProps {
@@ -39,6 +40,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [colorMenuItemId, setColorMenuItemId] = useState<string | null>(null);
   const [colorMenuPosition, setColorMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showCompletedModal, setShowCompletedModal] = useState(false);
+  const [completedItems, setCompletedItems] = useState<Item[]>([]);
 
   useEffect(() => {
     setLocalItems(items);
@@ -164,6 +167,39 @@ const ItemsList: React.FC<ItemsListProps> = ({
     }
   };
 
+  // Completed items logic
+  const activeItems = localItems.filter(item => item.status_color !== 'gray');
+  const completedCount = localItems.filter(item => item.status_color === 'gray').length;
+
+  const loadCompletedItems = () => {
+    const completed = localItems.filter(item => item.status_color === 'gray');
+    setCompletedItems(completed);
+  };
+
+  const handleRestoreItem = async (itemId: string) => {
+    try {
+      // Change status_color to green to restore
+      await firestoreDb.items.update({ id: itemId, status_color: 'green' });
+      // Update local state
+      setLocalItems(prev =>
+        prev.map(i => i.id === itemId ? { ...i, status_color: 'green' } : i)
+      );
+      loadCompletedItems();
+    } catch (error) {
+      console.error('항목 복원 실패:', error);
+    }
+  };
+
+  const handleDeleteCompletedItem = async (itemId: string) => {
+    try {
+      await firestoreDb.items.delete(itemId);
+      setLocalItems(prev => prev.filter(i => i.id !== itemId));
+      loadCompletedItems();
+    } catch (error) {
+      console.error('항목 삭제 실패:', error);
+    }
+  };
+
   const getStatusBackgroundClass = (item: Item, isSelected: boolean): string => {
     if (!item.status_color) return '';
 
@@ -224,9 +260,9 @@ const ItemsList: React.FC<ItemsListProps> = ({
            <div className="p-4 space-y-3 opacity-50">
              {[1,2,3].map(i => <div key={i} className="h-12 bg-zinc-800/50 rounded animate-pulse" />)}
            </div>
-         ) : localItems.length > 0 ? (
+         ) : activeItems.length > 0 ? (
            <div className="divide-y divide-border/50">
-             {localItems.map((item, index) => (
+             {activeItems.map((item, index) => (
                <div
                  key={item.id}
                  draggable
@@ -325,6 +361,22 @@ const ItemsList: React.FC<ItemsListProps> = ({
              </button>
            </div>
          )}
+
+       {/* Completed Items Button */}
+       {completedCount > 0 && (
+         <div className="px-4 py-3 border-t border-border bg-background/50">
+           <button
+             onClick={() => {
+               loadCompletedItems();
+               setShowCompletedModal(true);
+             }}
+             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors text-sm text-gray-700 font-medium"
+           >
+             <Icons.CheckCircle className="w-4 h-4" />
+             <span>완료 ({completedCount})</span>
+           </button>
+         </div>
+       )}
        </div>
 
        {/* Desktop Context Menu */}
@@ -418,6 +470,15 @@ const ItemsList: React.FC<ItemsListProps> = ({
            </div>
          </div>
        )}
+
+       {/* Completed Items Modal */}
+       <CompletedItemsModal
+         isOpen={showCompletedModal}
+         completedItems={completedItems}
+         onRestore={handleRestoreItem}
+         onDelete={handleDeleteCompletedItem}
+         onClose={() => setShowCompletedModal(false)}
+       />
 
        {/* Delete Confirm Modal */}
        <ConfirmModal
