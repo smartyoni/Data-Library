@@ -30,8 +30,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
   loading,
   onBack
 }) => {
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
+  const dragItem = useRef<string | null>(null);
+  const dragOverItem = useRef<string | null>(null);
   const [localItems, setLocalItems] = useState<Item[]>(items);
   const [menuItemId, setMenuItemId] = useState<string | null>(null);
   const [contextMenuItemId, setContextMenuItemId] = useState<string | null>(null);
@@ -60,8 +60,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
     }
   }, [menuItemId, contextMenuItemId, colorMenuItemId]);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
-    dragItem.current = position;
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, itemId: string) => {
+    dragItem.current = itemId;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
   };
@@ -84,12 +84,10 @@ const ItemsList: React.FC<ItemsListProps> = ({
     });
   };
 
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
-    // Calculate sorted items at the moment of interaction
-    const sorted = getSortedActiveItems(localItems);
-
-    const draggedItem = sorted[dragItem.current ?? -1];
-    const targetItem = sorted[position];
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, targetItemId: string) => {
+    // Find items by ID instead of position
+    const draggedItem = localItems.find(item => item.id === dragItem.current);
+    const targetItem = localItems.find(item => item.id === targetItemId);
 
     if (draggedItem && targetItem) {
       const draggedColor = draggedItem.status_color || 'undefined';
@@ -101,7 +99,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
       }
     }
 
-    dragOverItem.current = position;
+    dragOverItem.current = targetItemId;
     e.preventDefault();
   };
 
@@ -112,39 +110,46 @@ const ItemsList: React.FC<ItemsListProps> = ({
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const start = dragItem.current;
-    const end = dragOverItem.current;
+    const draggedItemId = dragItem.current;
+    const targetItemId = dragOverItem.current;
 
-    if (start !== null && end !== null && start !== end) {
-      // Calculate sorted items at the moment of drop
-      const sorted = getSortedActiveItems(localItems);
+    if (draggedItemId && targetItemId && draggedItemId !== targetItemId) {
+      // Find items by ID
+      const draggedItem = localItems.find(item => item.id === draggedItemId);
+      const targetItem = localItems.find(item => item.id === targetItemId);
 
-      const draggedItem = sorted[start];
-      const targetItem = sorted[end];
+      if (draggedItem && targetItem) {
+        const draggedColor = draggedItem.status_color || 'undefined';
+        const targetColor = targetItem.status_color || 'undefined';
 
-      const draggedColor = draggedItem.status_color || 'undefined';
-      const targetColor = targetItem.status_color || 'undefined';
+        // Only allow drop within same color group
+        if (draggedColor !== targetColor) {
+          dragItem.current = null;
+          dragOverItem.current = null;
+          return; // Prevent drop
+        }
 
-      // Only allow drop within same color group
-      if (draggedColor !== targetColor) {
-        dragItem.current = null;
-        dragOverItem.current = null;
-        return; // Prevent drop
+        // Get active items and find their positions in sorted array
+        const sorted = getSortedActiveItems(localItems);
+        const startIndex = sorted.findIndex(item => item.id === draggedItemId);
+        const endIndex = sorted.findIndex(item => item.id === targetItemId);
+
+        if (startIndex !== -1 && endIndex !== -1 && startIndex !== endIndex) {
+          // Reorder within sorted items
+          const _items = [...sorted];
+          const draggedItemContent = _items[startIndex];
+          _items.splice(startIndex, 1);
+          _items.splice(endIndex, 0, draggedItemContent);
+
+          // Update localItems with new order
+          // Need to merge back with completed items (gray)
+          const completedItems = localItems.filter(item => item.status_color === 'gray');
+          const allItems = [..._items, ...completedItems];
+
+          setLocalItems(allItems);
+          onReorder(allItems);
+        }
       }
-
-      // Reorder within sorted items
-      const _items = [...sorted];
-      const draggedItemContent = _items[start];
-      _items.splice(start, 1);
-      _items.splice(end, 0, draggedItemContent);
-
-      // Update localItems with new order
-      // Need to merge back with completed items (gray)
-      const completedItems = localItems.filter(item => item.status_color === 'gray');
-      const allItems = [..._items, ...completedItems];
-
-      setLocalItems(allItems);
-      onReorder(allItems);
     }
 
     dragItem.current = null;
@@ -339,12 +344,12 @@ const ItemsList: React.FC<ItemsListProps> = ({
            </div>
          ) : sortedActiveItems.length > 0 ? (
            <div className="divide-y divide-border/50">
-             {sortedActiveItems.map((item, index) => (
+             {sortedActiveItems.map((item) => (
                <div
                  key={item.id}
                  draggable
-                 onDragStart={(e) => handleDragStart(e, index)}
-                 onDragEnter={(e) => handleDragEnter(e, index)}
+                 onDragStart={(e) => handleDragStart(e, item.id)}
+                 onDragEnter={(e) => handleDragEnter(e, item.id)}
                  onDragOver={handleDragOver}
                  onDrop={handleDrop}
                  onClick={() => onSelectItem(item.id)}
