@@ -66,10 +66,30 @@ const ItemsList: React.FC<ItemsListProps> = ({
     e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
   };
 
+  // Helper function to get sorted active items
+  const getSortedActiveItems = (items: Item[]) => {
+    const activeItems = items.filter(item => item.status_color !== 'gray');
+    return [...activeItems].sort((a, b) => {
+      const colorPriority: Record<string, number> = {
+        'pink': 1,
+        'green': 2,
+        'undefined': 3
+      };
+      const aPriority = colorPriority[a.status_color || 'undefined'];
+      const bPriority = colorPriority[b.status_color || 'undefined'];
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+  };
+
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
-    // Check if dragging within same color group for visual feedback
-    const draggedItem = sortedActiveItems[dragItem.current ?? -1];
-    const targetItem = sortedActiveItems[position];
+    // Calculate sorted items at the moment of interaction
+    const sorted = getSortedActiveItems(localItems);
+
+    const draggedItem = sorted[dragItem.current ?? -1];
+    const targetItem = sorted[position];
 
     if (draggedItem && targetItem) {
       const draggedColor = draggedItem.status_color || 'undefined';
@@ -96,9 +116,11 @@ const ItemsList: React.FC<ItemsListProps> = ({
     const end = dragOverItem.current;
 
     if (start !== null && end !== null && start !== end) {
-      // Check if dragging within same color group
-      const draggedItem = sortedActiveItems[start];
-      const targetItem = sortedActiveItems[end];
+      // Calculate sorted items at the moment of drop
+      const sorted = getSortedActiveItems(localItems);
+
+      const draggedItem = sorted[start];
+      const targetItem = sorted[end];
 
       const draggedColor = draggedItem.status_color || 'undefined';
       const targetColor = targetItem.status_color || 'undefined';
@@ -110,8 +132,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
         return; // Prevent drop
       }
 
-      // Reorder within sortedActiveItems
-      const _items = [...sortedActiveItems];
+      // Reorder within sorted items
+      const _items = [...sorted];
       const draggedItemContent = _items[start];
       _items.splice(start, 1);
       _items.splice(end, 0, draggedItemContent);
