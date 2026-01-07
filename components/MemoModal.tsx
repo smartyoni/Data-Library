@@ -58,14 +58,14 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-surface border border-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col shadow-black/50 max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 md:p-4">
+      <div className="bg-surface border border-border w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col shadow-black/50 h-[80vh]">
         
         {/* Content Area */}
-        <div className="p-6 flex-1 flex flex-col overflow-y-auto min-h-[300px]">
+        <div className="p-3 flex-1 flex flex-col overflow-y-auto">
           {isEditing ? (
             <textarea
-              className="flex-1 w-full bg-black border border-border rounded-lg p-5 text-base text-white resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent custom-scrollbar leading-relaxed"
+              className="flex-1 w-full bg-black border border-border rounded-lg p-3 text-base text-white resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent custom-scrollbar leading-relaxed"
               placeholder="상세 메모 내용을 입력하세요..."
               value={memoText}
               onChange={(e) => setMemoText(e.target.value)}
@@ -74,7 +74,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ isOpen, onClose, checklistItem, o
             />
           ) : (
             <div
-                className="flex-1 w-full bg-black rounded-lg p-5 text-base text-white overflow-y-auto custom-scrollbar whitespace-pre-wrap cursor-pointer hover:bg-zinc-900 transition-colors border border-transparent hover:border-zinc-800"
+                className="flex-1 w-full bg-black rounded-lg p-3 text-base text-white overflow-y-auto custom-scrollbar whitespace-pre-wrap cursor-pointer hover:bg-zinc-900 transition-colors border border-transparent hover:border-zinc-800"
                 onDoubleClick={() => setIsEditing(true)}
                 title="더블클릭하여 수정"
             >
