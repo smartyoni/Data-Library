@@ -4,6 +4,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   doc,
   query,
   where,
@@ -438,7 +439,14 @@ export const firestoreDb = {
         const docRef = doc(db, COLLECTIONS.ITEMS, item.id);
         const updateData = { ...item };
         delete updateData.id;
-        await updateDoc(docRef, updateData as any);
+
+        // Transform null values to deleteField() for proper field deletion
+        const processedData: Record<string, any> = {};
+        for (const [key, value] of Object.entries(updateData)) {
+          processedData[key] = value === null ? deleteField() : value;
+        }
+
+        await updateDoc(docRef, processedData);
       } catch (error) {
         console.error('Item 업데이트 실패:', error);
         throw error;

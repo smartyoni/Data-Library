@@ -38,8 +38,6 @@ const ItemsList: React.FC<ItemsListProps> = ({
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
-  const [colorMenuItemId, setColorMenuItemId] = useState<string | null>(null);
-  const [colorMenuPosition, setColorMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [showCompletedModal, setShowCompletedModal] = useState(false);
   const [completedItems, setCompletedItems] = useState<Item[]>([]);
 
@@ -52,13 +50,12 @@ const ItemsList: React.FC<ItemsListProps> = ({
     const handleClickOutside = () => {
       setMenuItemId(null);
       setContextMenuItemId(null);
-      setColorMenuItemId(null);
     };
-    if (menuItemId || contextMenuItemId || colorMenuItemId) {
+    if (menuItemId || contextMenuItemId) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [menuItemId, contextMenuItemId, colorMenuItemId]);
+  }, [menuItemId, contextMenuItemId]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, itemId: string) => {
     dragItem.current = itemId;
@@ -94,6 +91,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
       const targetColor = targetItem.status_color || 'undefined';
 
       if (draggedColor !== targetColor) {
+        e.preventDefault(); // Prevent default to satisfy HTML5 drag-drop spec
         e.dataTransfer.dropEffect = "none"; // Show "not allowed" cursor
         return;
       }
@@ -192,40 +190,28 @@ const ItemsList: React.FC<ItemsListProps> = ({
     setDeletingItemId(null);
   };
 
-  const handleColorClick = (e: React.MouseEvent | MouseEvent, itemId: string) => {
-    e.stopPropagation();
+  const handleColorSelect = async (itemId: string, color: 'green' | 'pink' | 'gray') => {
+    const item = localItems.find(i => i.id === itemId);
+    if (item) {
+      await firestoreDb.items.update({ id: item.id, status_color: color });
+      setLocalItems(prev =>
+        prev.map(i => i.id === itemId ? { ...i, status_color: color } : i)
+      );
+    }
     setMenuItemId(null);
     setContextMenuItemId(null);
-    setColorMenuItemId(itemId);
-    setColorMenuPosition({ x: e.clientX, y: e.clientY });
   };
 
-  const handleColorSelect = async (color: 'green' | 'pink' | 'gray') => {
-    if (colorMenuItemId) {
-      const item = localItems.find(i => i.id === colorMenuItemId);
-      if (item) {
-        await firestoreDb.items.update({ id: item.id, status_color: color });
-        setLocalItems(prev =>
-          prev.map(i => i.id === colorMenuItemId ? { ...i, status_color: color } : i)
-        );
-      }
-      setColorMenuItemId(null);
-      setColorMenuPosition(null);
+  const handleColorReset = async (itemId: string) => {
+    const item = localItems.find(i => i.id === itemId);
+    if (item) {
+      await firestoreDb.items.update({ id: item.id, status_color: null as any });
+      setLocalItems(prev =>
+        prev.map(i => i.id === itemId ? { ...i, status_color: undefined } : i)
+      );
     }
-  };
-
-  const handleColorReset = async () => {
-    if (colorMenuItemId) {
-      const item = localItems.find(i => i.id === colorMenuItemId);
-      if (item) {
-        await firestoreDb.items.update({ id: item.id, status_color: undefined });
-        setLocalItems(prev =>
-          prev.map(i => i.id === colorMenuItemId ? { ...i, status_color: undefined } : i)
-        );
-      }
-      setColorMenuItemId(null);
-      setColorMenuPosition(null);
-    }
+    setMenuItemId(null);
+    setContextMenuItemId(null);
   };
 
   // Completed items logic
@@ -234,10 +220,10 @@ const ItemsList: React.FC<ItemsListProps> = ({
 
   // Sort active items by status_color, then by order
   const sortedActiveItems = [...activeItems].sort((a, b) => {
-    // Define color priority: pink (진행중) -> green (착수전) -> no color
+    // Define color priority: pink (진행중) -> green (계획단계) -> no color
     const colorPriority: Record<string, number> = {
       'pink': 1,   // 진행중 - highest priority
-      'green': 2,  // 착수전
+      'green': 2,  // 계획단계
       'undefined': 3  // no color - lowest priority
     };
 
@@ -393,7 +379,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
                      {/* Dropdown Menu */}
                      {menuItemId === item.id && (
                        <div
-                         className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[120px]"
+                         className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[140px]"
                          onClick={(e) => e.stopPropagation()}
                        >
                          <button
@@ -404,11 +390,32 @@ const ItemsList: React.FC<ItemsListProps> = ({
                            이동
                          </button>
                          <button
-                           onClick={(e) => handleColorClick(e, item.id)}
-                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                           onClick={() => handleColorSelect(item.id, 'green')}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-green-50 transition-colors border-b border-gray-200"
                          >
-                           <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 via-pink-500 to-gray-400" />
-                           진행색상
+                           <div className="w-3 h-3 rounded-full bg-green-500" />
+                           계획단계
+                         </button>
+                         <button
+                           onClick={() => handleColorSelect(item.id, 'pink')}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-pink-50 transition-colors border-b border-gray-200"
+                         >
+                           <div className="w-3 h-3 rounded-full bg-pink-500" />
+                           진행중
+                         </button>
+                         <button
+                           onClick={() => handleColorSelect(item.id, 'gray')}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 transition-colors border-b border-gray-200"
+                         >
+                           <div className="w-3 h-3 rounded-full bg-gray-400" />
+                           완료
+                         </button>
+                         <button
+                           onClick={() => handleColorReset(item.id)}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-200"
+                         >
+                           <div className="w-3 h-3 rounded-full border-2 border-gray-300 border-dashed" />
+                           색상초기화
                          </button>
                          <button
                            onClick={() => handleMobileDeleteClick(item.id)}
@@ -469,7 +476,7 @@ const ItemsList: React.FC<ItemsListProps> = ({
        {/* Desktop Context Menu */}
        {contextMenuItemId && contextMenuPosition && (
          <div
-           className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[120px]"
+           className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[140px]"
            style={{
              left: `${contextMenuPosition.x}px`,
              top: `${contextMenuPosition.y}px`,
@@ -486,11 +493,32 @@ const ItemsList: React.FC<ItemsListProps> = ({
                  이동
                </button>
                <button
-                 onClick={(e) => handleColorClick(e, contextMenuItemId)}
-                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-purple-50 transition-colors border-b border-gray-200"
+                 onClick={() => handleColorSelect(contextMenuItemId, 'green')}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-green-50 transition-colors border-b border-gray-200"
                >
-                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 via-pink-500 to-gray-400" />
-                 진행색상
+                 <div className="w-3 h-3 rounded-full bg-green-500" />
+                 계획단계
+               </button>
+               <button
+                 onClick={() => handleColorSelect(contextMenuItemId, 'pink')}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-pink-50 transition-colors border-b border-gray-200"
+               >
+                 <div className="w-3 h-3 rounded-full bg-pink-500" />
+                 진행중
+               </button>
+               <button
+                 onClick={() => handleColorSelect(contextMenuItemId, 'gray')}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 transition-colors border-b border-gray-200"
+               >
+                 <div className="w-3 h-3 rounded-full bg-gray-400" />
+                 완료
+               </button>
+               <button
+                 onClick={() => handleColorReset(contextMenuItemId)}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-200"
+               >
+                 <div className="w-3 h-3 rounded-full border-2 border-gray-300 border-dashed" />
+                 색상초기화
                </button>
                <button
                  onClick={() => {
@@ -508,55 +536,6 @@ const ItemsList: React.FC<ItemsListProps> = ({
          </div>
        )}
 
-       {/* Color Palette Menu */}
-       {colorMenuItemId && colorMenuPosition && (
-         <div
-           className="fixed bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-2"
-           style={{
-             left: `${colorMenuPosition.x}px`,
-             top: `${colorMenuPosition.y}px`,
-           }}
-           onClick={(e) => e.stopPropagation()}
-         >
-           <div className="flex flex-col gap-1">
-             <p className="text-xs text-gray-600 px-2 py-1 font-medium">진행 상태</p>
-
-             <button
-               onClick={() => handleColorSelect('green')}
-               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-green-50 transition-colors rounded"
-             >
-               <div className="w-4 h-4 rounded-full bg-green-500" />
-               <span>착수전</span>
-             </button>
-
-             <button
-               onClick={() => handleColorSelect('pink')}
-               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-pink-50 transition-colors rounded"
-             >
-               <div className="w-4 h-4 rounded-full bg-pink-500" />
-               <span>진행중</span>
-             </button>
-
-             <button
-               onClick={() => handleColorSelect('gray')}
-               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors rounded"
-             >
-               <div className="w-4 h-4 rounded-full bg-gray-300" />
-               <span>완료</span>
-             </button>
-
-             <div className="border-t border-gray-200 my-1"></div>
-
-             <button
-               onClick={handleColorReset}
-               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors rounded"
-             >
-               <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-dashed" />
-               <span>색상초기화</span>
-             </button>
-           </div>
-         </div>
-       )}
 
        {/* Completed Items Modal */}
        <CompletedItemsModal
