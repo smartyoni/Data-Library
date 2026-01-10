@@ -63,38 +63,17 @@ const ItemsList: React.FC<ItemsListProps> = ({
     e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
   };
 
-  // Helper function to get sorted active items
-  const getSortedActiveItems = (items: Item[]) => {
-    const activeItems = items.filter(item => item.status_color !== 'gray');
-    return [...activeItems].sort((a, b) => {
-      const colorPriority: Record<string, number> = {
-        'pink': 1,
-        'green': 2,
-        'undefined': 3
-      };
-      const aPriority = colorPriority[a.status_color || 'undefined'];
-      const bPriority = colorPriority[b.status_color || 'undefined'];
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-      return (a.order ?? 0) - (b.order ?? 0);
-    });
+  // Helper function to get active items (filter out completed items)
+  const getActiveItems = (items: Item[]) => {
+    return items.filter(item => item.status_color !== 'gray');
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, targetItemId: string) => {
-    // Find items by ID instead of position
-    const draggedItem = localItems.find(item => item.id === dragItem.current);
+    // Only prevent dragging to completed (gray) items
     const targetItem = localItems.find(item => item.id === targetItemId);
-
-    if (draggedItem && targetItem) {
-      const draggedColor = draggedItem.status_color || 'undefined';
-      const targetColor = targetItem.status_color || 'undefined';
-
-      if (draggedColor !== targetColor) {
-        e.preventDefault(); // Prevent default to satisfy HTML5 drag-drop spec
-        e.dataTransfer.dropEffect = "none"; // Show "not allowed" cursor
-        return;
-      }
+    if (targetItem && targetItem.status_color === 'gray') {
+      e.dataTransfer.dropEffect = "none"; // Show "not allowed" cursor
+      return;
     }
 
     dragOverItem.current = targetItemId;
@@ -116,25 +95,16 @@ const ItemsList: React.FC<ItemsListProps> = ({
       const draggedItem = localItems.find(item => item.id === draggedItemId);
       const targetItem = localItems.find(item => item.id === targetItemId);
 
-      if (draggedItem && targetItem) {
-        const draggedColor = draggedItem.status_color || 'undefined';
-        const targetColor = targetItem.status_color || 'undefined';
-
-        // Only allow drop within same color group
-        if (draggedColor !== targetColor) {
-          dragItem.current = null;
-          dragOverItem.current = null;
-          return; // Prevent drop
-        }
-
-        // Get active items and find their positions in sorted array
-        const sorted = getSortedActiveItems(localItems);
-        const startIndex = sorted.findIndex(item => item.id === draggedItemId);
-        const endIndex = sorted.findIndex(item => item.id === targetItemId);
+      // Don't allow dragging to completed items
+      if (draggedItem && targetItem && targetItem.status_color !== 'gray') {
+        // Get active items and find their positions
+        const activeItems = getActiveItems(localItems);
+        const startIndex = activeItems.findIndex(item => item.id === draggedItemId);
+        const endIndex = activeItems.findIndex(item => item.id === targetItemId);
 
         if (startIndex !== -1 && endIndex !== -1 && startIndex !== endIndex) {
-          // Reorder within sorted items
-          const _items = [...sorted];
+          // Reorder within active items
+          const _items = [...activeItems];
           const draggedItemContent = _items[startIndex];
           _items.splice(startIndex, 1);
           _items.splice(endIndex, 0, draggedItemContent);
@@ -190,24 +160,26 @@ const ItemsList: React.FC<ItemsListProps> = ({
     setDeletingItemId(null);
   };
 
-  const handleColorSelect = async (itemId: string, color: 'green' | 'pink' | 'gray') => {
+  const handleMarkComplete = async (itemId: string) => {
     const item = localItems.find(i => i.id === itemId);
     if (item) {
-      await firestoreDb.items.update({ id: item.id, status_color: color });
+      await firestoreDb.items.update({ id: item.id, status_color: 'gray' });
       setLocalItems(prev =>
-        prev.map(i => i.id === itemId ? { ...i, status_color: color } : i)
+        prev.map(i => i.id === itemId ? { ...i, status_color: 'gray' } : i)
       );
     }
     setMenuItemId(null);
     setContextMenuItemId(null);
   };
 
-  const handleColorReset = async (itemId: string) => {
+  const handleColorSelect = async (itemId: string, color?: 'green' | 'pink' | 'gray') => {
     const item = localItems.find(i => i.id === itemId);
     if (item) {
-      await firestoreDb.items.update({ id: item.id, status_color: null as any });
+      // undefined를 null로 변환 (Firebase에서 deleteField() 처리)
+      const colorValue = color === undefined ? null : color;
+      await firestoreDb.items.update({ id: item.id, status_color: colorValue });
       setLocalItems(prev =>
-        prev.map(i => i.id === itemId ? { ...i, status_color: undefined } : i)
+        prev.map(i => i.id === itemId ? { ...i, status_color: colorValue } : i)
       );
     }
     setMenuItemId(null);
@@ -218,24 +190,8 @@ const ItemsList: React.FC<ItemsListProps> = ({
   const activeItems = localItems.filter(item => item.status_color !== 'gray');
   const completedCount = localItems.filter(item => item.status_color === 'gray').length;
 
-  // Sort active items by status_color, then by order
+  // Sort active items by order field only
   const sortedActiveItems = [...activeItems].sort((a, b) => {
-    // Define color priority: pink (진행중) -> green (계획단계) -> no color
-    const colorPriority: Record<string, number> = {
-      'pink': 1,   // 진행중 - highest priority
-      'green': 2,  // 계획단계
-      'undefined': 3  // no color - lowest priority
-    };
-
-    const aPriority = colorPriority[a.status_color || 'undefined'];
-    const bPriority = colorPriority[b.status_color || 'undefined'];
-
-    // First sort by color priority
-    if (aPriority !== bPriority) {
-      return aPriority - bPriority;
-    }
-
-    // Within same color group, sort by order field
     return (a.order ?? 0) - (b.order ?? 0);
   });
 
@@ -246,11 +202,11 @@ const ItemsList: React.FC<ItemsListProps> = ({
 
   const handleRestoreItem = async (itemId: string) => {
     try {
-      // Change status_color to green to restore
-      await firestoreDb.items.update({ id: itemId, status_color: 'green' });
+      // Restore to no status (undefined)
+      await firestoreDb.items.update({ id: itemId, status_color: undefined });
       // Update local state
       setLocalItems(prev =>
-        prev.map(i => i.id === itemId ? { ...i, status_color: 'green' } : i)
+        prev.map(i => i.id === itemId ? { ...i, status_color: undefined } : i)
       );
       loadCompletedItems();
     } catch (error) {
@@ -394,14 +350,21 @@ const ItemsList: React.FC<ItemsListProps> = ({
                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-green-50 transition-colors border-b border-gray-200"
                          >
                            <div className="w-3 h-3 rounded-full bg-green-500" />
-                           계획단계
+                           녹색
                          </button>
                          <button
                            onClick={() => handleColorSelect(item.id, 'pink')}
                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-pink-50 transition-colors border-b border-gray-200"
                          >
                            <div className="w-3 h-3 rounded-full bg-pink-500" />
-                           진행중
+                           핑크색
+                         </button>
+                         <button
+                           onClick={() => handleColorSelect(item.id)}
+                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50 transition-colors border-b border-gray-200"
+                         >
+                           <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
+                           기본색상
                          </button>
                          <button
                            onClick={() => handleColorSelect(item.id, 'gray')}
@@ -409,13 +372,6 @@ const ItemsList: React.FC<ItemsListProps> = ({
                          >
                            <div className="w-3 h-3 rounded-full bg-gray-400" />
                            완료
-                         </button>
-                         <button
-                           onClick={() => handleColorReset(item.id)}
-                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-200"
-                         >
-                           <div className="w-3 h-3 rounded-full border-2 border-gray-300 border-dashed" />
-                           색상초기화
                          </button>
                          <button
                            onClick={() => handleMobileDeleteClick(item.id)}
@@ -497,14 +453,21 @@ const ItemsList: React.FC<ItemsListProps> = ({
                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-green-50 transition-colors border-b border-gray-200"
                >
                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                 계획단계
+                 녹색
                </button>
                <button
                  onClick={() => handleColorSelect(contextMenuItemId, 'pink')}
                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-pink-50 transition-colors border-b border-gray-200"
                >
                  <div className="w-3 h-3 rounded-full bg-pink-500" />
-                 진행중
+                 핑크색
+               </button>
+               <button
+                 onClick={() => handleColorSelect(contextMenuItemId)}
+                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50 transition-colors border-b border-gray-200"
+               >
+                 <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
+                 기본색상
                </button>
                <button
                  onClick={() => handleColorSelect(contextMenuItemId, 'gray')}
@@ -512,13 +475,6 @@ const ItemsList: React.FC<ItemsListProps> = ({
                >
                  <div className="w-3 h-3 rounded-full bg-gray-400" />
                  완료
-               </button>
-               <button
-                 onClick={() => handleColorReset(contextMenuItemId)}
-                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-200"
-               >
-                 <div className="w-3 h-3 rounded-full border-2 border-gray-300 border-dashed" />
-                 색상초기화
                </button>
                <button
                  onClick={() => {

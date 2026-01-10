@@ -15,6 +15,7 @@ const isMobileDevice = (): boolean => {
 
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [isWorkspacesLoaded, setIsWorkspacesLoaded] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(() => {
     return localStorage.getItem('activeWorkspaceId') || null;
   });
@@ -49,6 +50,7 @@ const App: React.FC = () => {
   const loadWorkspaces = useCallback(async () => {
     const data = await firestoreDb.workspaces.list();
     setWorkspaces(data);
+    setIsWorkspacesLoaded(true);
   }, []);
 
   // Load workspaces on mount
@@ -70,6 +72,12 @@ const App: React.FC = () => {
 
   // Set default active workspace when workspaces are loaded
   useEffect(() => {
+    // workspaces가 아직 로드되지 않았으면 아무것도 하지 않음
+    if (!isWorkspacesLoaded) {
+      return;
+    }
+
+    // 이제 workspaces 로드가 완료됨
     if (workspaces.length > 0) {
       // If no active ID is set, use the first workspace
       if (!activeWorkspaceId) {
@@ -79,10 +87,8 @@ const App: React.FC = () => {
       else if (!workspaces.find(w => w.id === activeWorkspaceId)) {
         setActiveWorkspaceId(workspaces[0].id);
       }
-    } else {
-      setActiveWorkspaceId(null);
     }
-  }, [workspaces, activeWorkspaceId]);
+  }, [workspaces, isWorkspacesLoaded]);
 
   const handleDeleteWorkspace = useCallback(async (id: string) => {
     await firestoreDb.workspaces.delete(id);
@@ -138,7 +144,11 @@ const App: React.FC = () => {
     };
   }, [isBookmarkViewActive]);
 
-  const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId);
+  // activeWorkspace를 찾되, 로딩 중이라도 activeWorkspaceId가 있으면 placeholder로 WorkspaceView를 유지
+  const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId) ||
+    (activeWorkspaceId && workspaces.length === 0
+      ? { id: activeWorkspaceId, name: 'Loading...', created_at: new Date(), is_locked: false }
+      : null);
 
   return (
     <div className="flex flex-col h-screen bg-black text-zinc-100 font-sans overflow-hidden">

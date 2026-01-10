@@ -47,8 +47,8 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   const [loadingItems, setLoadingItems] = useState(false);
   const [hiddenCategoriesCount, setHiddenCategoriesCount] = useState(0);
 
-  // 초기 마운트 vs 워크스페이스 변경 구분
-  const isInitialMount = useRef(true);
+  // 워크스페이스 변경 감지 - 이전 workspace.id를 추적하여 실제 변경 감지
+  const previousWorkspaceIdRef = useRef<string | null>(null);
   const [isRestoringState, setIsRestoringState] = useState(false);
 
   // Modal State
@@ -59,11 +59,11 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
 
   // Load categories when workspace changes
   useEffect(() => {
-    if (isInitialMount.current) {
-      // 초기 마운트 - localStorage에서 상태 복원
-      isInitialMount.current = false;
-      setIsRestoringState(true);
+    const isInitialMount = previousWorkspaceIdRef.current === null;
 
+    if (isInitialMount) {
+      // 초기 마운트 - localStorage에서 상태 복원
+      setIsRestoringState(true);
       loadCategories();
 
       const savedCategoryId = localStorage.getItem(`selectedCategoryId_${workspace.id}`);
@@ -73,13 +73,18 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
       } else {
         setIsRestoringState(false);
       }
-    } else {
+    } else if (previousWorkspaceIdRef.current !== workspace.id) {
       // 실제 워크스페이스 변경 - 모든 상태 초기화
       loadCategories();
       setSelectedCategoryId(null);
       setItems([]);
       setSelectedItemId(null);
+    } else {
+      // 같은 워크스페이스가 다시 렌더링되었을 뿐 - 상태 유지하면서 카테고리 재로드
+      loadCategories();
     }
+
+    previousWorkspaceIdRef.current = workspace.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace.id]);
 
@@ -191,11 +196,17 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   };
 
   const handleReorderItems = async (newOrder: Item[]) => {
-     // Optimistically update local state
-     setItems(newOrder);
-     if (selectedCategoryId) {
-         await firestoreDb.items.reorder(selectedCategoryId, newOrder.map(i => i.id));
-     }
+    // Update order field values to match array positions
+    const itemsWithUpdatedOrder = newOrder.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+
+    // Optimistically update local state with correct order values
+    setItems(itemsWithUpdatedOrder);
+    if (selectedCategoryId) {
+      await firestoreDb.items.reorder(selectedCategoryId, newOrder.map(i => i.id));
+    }
   };
 
   const handleUpdateItemLocal = (id: string, updates: Partial<Item>) => {
