@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import ItemsList from './ItemsList';
 import ItemDetail from './ItemDetail';
@@ -47,6 +47,10 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   const [loadingItems, setLoadingItems] = useState(false);
   const [hiddenCategoriesCount, setHiddenCategoriesCount] = useState(0);
 
+  // 초기 마운트 vs 워크스페이스 변경 구분
+  const isInitialMount = useRef(true);
+  const [isRestoringState, setIsRestoringState] = useState(false);
+
   // Modal State
   const [isMemoModalOpen, setMemoModalOpen] = useState(false);
   const [currentMemoItem, setCurrentMemoItem] = useState<ChecklistItem | null>(null);
@@ -55,14 +59,27 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
 
   // Load categories when workspace changes
   useEffect(() => {
-    loadCategories();
-    // 워크스페이스 변경시 저장된 카테고리 ID 불러오기
-    const savedCategoryId = localStorage.getItem(`selectedCategoryId_${workspace.id}`);
-    const savedItemId = localStorage.getItem(`selectedItemId_${workspace.id}`);
+    if (isInitialMount.current) {
+      // 초기 마운트 - localStorage에서 상태 복원
+      isInitialMount.current = false;
+      setIsRestoringState(true);
 
-    setSelectedCategoryId(savedCategoryId);
-    setItems([]);
-    setSelectedItemId(null);
+      loadCategories();
+
+      const savedCategoryId = localStorage.getItem(`selectedCategoryId_${workspace.id}`);
+      if (savedCategoryId) {
+        setSelectedCategoryId(savedCategoryId);
+        // selectedItemId는 아이템 로드 후 복원 (selectedCategoryId effect에서 처리)
+      } else {
+        setIsRestoringState(false);
+      }
+    } else {
+      // 실제 워크스페이스 변경 - 모든 상태 초기화
+      loadCategories();
+      setSelectedCategoryId(null);
+      setItems([]);
+      setSelectedItemId(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspace.id]);
 
@@ -87,17 +104,31 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   // Load items when category changes
   useEffect(() => {
     if (selectedCategoryId) {
-      loadItems(selectedCategoryId);
-      // 저장된 아이템 ID 불러오기
-      const savedItemId = localStorage.getItem(`selectedItemId_${workspace.id}`);
-      if (savedItemId) {
-        setSelectedItemId(savedItemId);
-      } else {
-        setSelectedItemId(null);
-      }
+      const loadAndRestoreItems = async () => {
+        setLoadingItems(true);
+        const data = await firestoreDb.items.listByCategory(selectedCategoryId);
+        setItems(data);
+        setLoadingItems(false);
+
+        // 상태 복원 중이면 savedItemId를 로드된 데이터와 검증 후 복원
+        if (isRestoringState) {
+          const savedItemId = localStorage.getItem(`selectedItemId_${workspace.id}`);
+          if (savedItemId && data.some(item => item.id === savedItemId)) {
+            // 아이템이 실제로 존재하면 복원
+            setSelectedItemId(savedItemId);
+          } else if (savedItemId) {
+            // 아이템이 삭제되었으면 localStorage에서 제거
+            localStorage.removeItem(`selectedItemId_${workspace.id}`);
+          }
+          setIsRestoringState(false);
+        }
+      };
+
+      loadAndRestoreItems();
     } else {
       setItems([]);
       setSelectedItemId(null);
+      setIsRestoringState(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategoryId]);
