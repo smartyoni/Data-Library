@@ -29,7 +29,7 @@ const seedData = () => {
     
     const itemId1 = generateId();
     const items: Item[] = [
-      { id: itemId1, category_id: catId1, title: '아파트 매매 계약 필수 서류', description: '매도인 인감증명서 확인 필수.\n등기권리증 분실 시 확인서면 준비.', order: 0, created_at: now() }
+      { id: itemId1, category_id: catId1, title: '아파트 매매 계약 필수 서류', description: '', order: 0, created_at: now() }
     ];
 
     const checklists: ChecklistItem[] = [

@@ -794,6 +794,44 @@ export const firestoreDb = {
       }
     },
   },
+
+  // Migration function to clear all descriptions
+  migrations: {
+    clearAllDescriptions: async (): Promise<void> => {
+      try {
+        console.log('Starting description migration...');
+        const q = query(collection(db, COLLECTIONS.ITEMS));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.docs.length === 0) {
+          console.log('No items found. Migration skipped.');
+          return;
+        }
+
+        const batch = writeBatch(db);
+        let updateCount = 0;
+
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data() as Item;
+          // Only update if description is not empty
+          if (data.description && data.description.length > 0) {
+            batch.update(docSnap.ref, { description: '' });
+            updateCount++;
+          }
+        });
+
+        if (updateCount > 0) {
+          await batch.commit();
+          console.log(`Migration completed. Updated ${updateCount} items.`);
+        } else {
+          console.log('No items with descriptions found. Migration skipped.');
+        }
+      } catch (error) {
+        console.error('Description migration failed:', error);
+        throw error;
+      }
+    },
+  },
 };
 
 export default firestoreDb;

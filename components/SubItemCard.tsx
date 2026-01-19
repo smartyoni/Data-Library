@@ -12,7 +12,6 @@ interface SubItemCardProps {
 
 const SubItemCard: React.FC<SubItemCardProps> = ({ item, onDelete, onOpenMemo }) => {
   const [title, setTitle] = useState(item.title);
-  const [description, setDescription] = useState(item.description);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -20,14 +19,6 @@ const SubItemCard: React.FC<SubItemCardProps> = ({ item, onDelete, onOpenMemo })
     if (title !== item.title) {
         setIsSaving(true);
         await firestoreDb.items.update({ id: item.id, title });
-        setIsSaving(false);
-    }
-  };
-
-  const handleSaveDescription = async () => {
-    if (description !== item.description) {
-        setIsSaving(true);
-        await firestoreDb.items.update({ id: item.id, description });
         setIsSaving(false);
     }
   };
@@ -85,26 +76,8 @@ const SubItemCard: React.FC<SubItemCardProps> = ({ item, onDelete, onOpenMemo })
       {/* Expanded Body */}
       {isExpanded && (
         <div className="border-t border-border bg-zinc-950/30 animate-in slide-in-from-top-2 duration-200">
-          <div className="p-6 grid gap-8">
-            {/* Top: Text Area */}
-            <div>
-              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 block flex items-center gap-2">
-                <Icons.File className="w-4 h-4 text-zinc-400" />
-                상세 내용
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={handleSaveDescription}
-                className="w-full h-32 bg-zinc-950 border border-border rounded-lg p-4 text-sm text-zinc-300 resize-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all placeholder-zinc-700 leading-relaxed"
-                placeholder="자유로운 내용을 입력하세요..."
-              />
-            </div>
-
-            {/* Bottom: Checklist */}
-            <div className="bg-zinc-900/50 rounded-lg p-4 border border-border/50">
-                <Checklist itemId={item.id} onOpenMemo={onOpenMemo} />
-            </div>
+          <div className="p-6">
+            <Checklist itemId={item.id} onOpenMemo={onOpenMemo} />
           </div>
         </div>
       )}
