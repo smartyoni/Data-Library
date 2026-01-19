@@ -293,17 +293,19 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             
             <div className="flex-1 min-w-0">
               {editingItemId === item.id ? (
-                <input
+                <textarea
                   autoFocus
-                  type="text"
                   value={editingItemText}
                   onChange={(e) => setEditingItemText(e.target.value)}
                   onBlur={() => handleSaveItemText(item.id)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveItemText(item.id);
-                    if (e.key === 'Escape') setEditingItemId(null);
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setEditingItemId(null);
+                    }
                   }}
-                  className="w-full bg-zinc-950 border border-accent rounded px-1 py-3 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent min-h-10"
+                  className="w-full bg-zinc-950 border border-accent rounded px-2 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent resize-none overflow-y-auto"
+                  style={{ minHeight: '2.5rem', maxHeight: '5rem', lineHeight: '1.25rem' }}
                 />
               ) : (
                 <div
@@ -313,7 +315,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                       handleTextDoubleClick(item.id, item.text);
                     }
                   }}
-                  className={`w-full p-0 text-sm cursor-text ${
+                  className={`w-full p-0 text-sm cursor-text whitespace-pre-wrap ${
                     item.is_checked ? 'text-black line-through decoration-black' : 'text-zinc-200'
                   }`}
                 >
