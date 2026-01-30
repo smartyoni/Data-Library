@@ -389,40 +389,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-3 overflow-hidden">
-              {/* Mobile up/down arrows (hidden on desktop) */}
-              <div className="flex md:hidden flex-col gap-0.5 pt-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMoveUp(cat.id);
-                  }}
-                  disabled={index === 0}
-                  className={`p-0.5 transition-colors ${
-                    index === 0
-                      ? 'opacity-20 cursor-not-allowed text-zinc-700'
-                      : 'text-zinc-500 hover:text-accent'
-                  }`}
-                  title="위로 이동"
-                >
-                  <Icons.ChevronUp className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMoveDown(cat.id);
-                  }}
-                  disabled={index === localCategories.length - 1}
-                  className={`p-0.5 transition-colors ${
-                    index === localCategories.length - 1
-                      ? 'opacity-20 cursor-not-allowed text-zinc-700'
-                      : 'text-zinc-500 hover:text-accent'
-                  }`}
-                  title="아래로 이동"
-                >
-                  <Icons.ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
               <Icons.Folder className={`w-5 h-5 md:w-4 md:h-4 flex-shrink-0 ${selectedCategoryId === cat.id ? 'fill-accent/20' : ''}`} />
               {editingCategoryId === cat.id ? (
                 <input

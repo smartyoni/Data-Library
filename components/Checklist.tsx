@@ -337,40 +337,6 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             onContextMenu={(e) => handleContextMenu(e, item)}
             className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30"
           >
-            {/* Mobile up/down arrows (hidden on desktop) */}
-            <div className="flex md:hidden flex-col gap-0.5 pt-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMoveUp(item.id);
-                }}
-                disabled={index === 0}
-                className={`p-0.5 transition-colors ${
-                  index === 0
-                    ? 'opacity-20 cursor-not-allowed text-zinc-700'
-                    : 'text-zinc-500 hover:text-accent'
-                }`}
-                title="위로 이동"
-              >
-                <Icons.ChevronUp className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMoveDown(item.id);
-                }}
-                disabled={index === items.length - 1}
-                className={`p-0.5 transition-colors ${
-                  index === items.length - 1
-                    ? 'opacity-20 cursor-not-allowed text-zinc-700'
-                    : 'text-zinc-500 hover:text-accent'
-                }`}
-                title="아래로 이동"
-              >
-                <Icons.ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
             <div className="pt-1">
               <input
                 type="checkbox"

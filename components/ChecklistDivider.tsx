@@ -63,36 +63,6 @@ const ChecklistDivider: React.FC<ChecklistDividerProps> = ({
       onDrop={onDrop}
       className="group relative py-1.5 px-4"
     >
-      {/* Mobile up/down arrows (hidden on desktop) */}
-      <div className="flex md:hidden flex-col gap-0.5 absolute left-0 top-1/2 -translate-y-1/2 pl-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveUp(divider.id);
-          }}
-          disabled={isFirst}
-          className={`p-0.5 transition-colors ${
-            isFirst ? 'opacity-20 cursor-not-allowed text-zinc-700' : 'text-zinc-500 hover:text-accent'
-          }`}
-          title="위로 이동"
-        >
-          <Icons.ChevronUp className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveDown(divider.id);
-          }}
-          disabled={isLast}
-          className={`p-0.5 transition-colors ${
-            isLast ? 'opacity-20 cursor-not-allowed text-zinc-700' : 'text-zinc-500 hover:text-accent'
-          }`}
-          title="아래로 이동"
-        >
-          <Icons.ChevronDown className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
       {/* Divider with label */}
       <div className="flex items-center gap-3 px-4">
         {/* Space for checkbox alignment (matching checklist item layout) */}
