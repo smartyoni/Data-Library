@@ -25,15 +25,39 @@ export interface Item {
   created_at: string;
 }
 
-export interface ChecklistItem {
+// Base interface for checklist items and dividers
+interface ChecklistItemBase {
   id: string;
   item_id: string;
   order: number;
+  created_at: string;
+}
+
+// Regular checklist item
+export interface ChecklistItemData extends ChecklistItemBase {
+  type: 'item';
   text: string;
   is_checked: boolean;
   memo: string;
   status_color?: 'green' | 'pink' | 'gray';
-  created_at: string;
+}
+
+// Section divider
+export interface ChecklistDivider extends ChecklistItemBase {
+  type: 'divider';
+  label: string;
+}
+
+// Union type for type safety
+export type ChecklistItem = ChecklistItemData | ChecklistDivider;
+
+// Type guard functions
+export function isChecklistItem(item: ChecklistItem): item is ChecklistItemData {
+  return item.type === 'item';
+}
+
+export function isChecklistDivider(item: ChecklistItem): item is ChecklistDivider {
+  return item.type === 'divider';
 }
 
 export interface BookmarkZone {

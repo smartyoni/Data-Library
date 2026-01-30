@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from './ui/Icons';
-import { ChecklistItem } from '../types';
+import { ChecklistItem, ChecklistItemData, isChecklistItem, isChecklistDivider } from '../types';
 import firestoreDb from '../services/firestoreDb';
 import { useChecklistClipboard } from '../contexts/ChecklistClipboardContext';
+import ChecklistDivider from './ChecklistDivider';
 
 interface ChecklistProps {
   itemId: string;
@@ -13,6 +14,8 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newItemText, setNewItemText] = useState('');
+  const [newDividerLabel, setNewDividerLabel] = useState('');
+  const [showDividerInput, setShowDividerInput] = useState(false);
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState('');
@@ -42,6 +45,10 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   }, [menuChecklistId, contextMenuChecklistId]);
 
   const handleContextMenu = (e: React.MouseEvent, item: ChecklistItem) => {
+    // Only show context menu for items, not dividers
+    if (!isChecklistItem(item)) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     setContextMenuChecklistId(item.id);
@@ -109,6 +116,24 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
     if(!window.confirm('이 항목을 삭제하시겠습니까?')) return;
     setItems(prev => prev.filter(i => i.id !== id));
     await firestoreDb.checklist.delete(id);
+  };
+
+  const handleAddDivider = async () => {
+    if (!newDividerLabel.trim()) return;
+    const newDivider = await firestoreDb.checklist.createDivider(itemId, newDividerLabel);
+    setItems(prev => [...prev, newDivider]);
+    setNewDividerLabel('');
+    setShowDividerInput(false);
+  };
+
+  const handleDeleteDivider = async (id: string) => {
+    setItems(prev => prev.filter(i => i.id !== id));
+    await firestoreDb.checklist.delete(id);
+  };
+
+  const handleUpdateDivider = async (id: string, updates: { label?: string }) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
+    await firestoreDb.checklist.updateDivider(id, updates);
   };
 
   const handleStartEdit = (id: string, currentText: string) => {
@@ -200,38 +225,107 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   return (
     <div className="h-full flex flex-col pt-2">
       {/* Quick Input Field */}
-      <div className="mb-4 flex-shrink-0 flex items-center gap-2">
-        <input
-            type="text"
-            value={newItemText}
-            onChange={(e) => setNewItemText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="새로운 할 일을 입력하세요"
-            className="flex-1 bg-zinc-900/50 border border-zinc-700 text-sm text-zinc-200 rounded-lg py-2.5 px-3 focus:ring-1 focus:ring-accent focus:border-accent focus:outline-none transition-all placeholder-zinc-600 shadow-sm"
-        />
-        <button
-          onClick={handleAddItem}
-          disabled={!newItemText.trim()}
-          className="flex-shrink-0 p-2.5 bg-accent/10 border border-accent/30 text-accent rounded-lg hover:bg-accent/20 hover:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          title="항목 추가 (또는 Enter 입력)"
-        >
-          <Icons.Plus className="w-5 h-5" />
-        </button>
-        {hasClipboard && (
+      <div className="mb-4 flex-shrink-0">
+        {showDividerInput ? (
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              autoFocus
+              type="text"
+              value={newDividerLabel}
+              onChange={(e) => setNewDividerLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleAddDivider();
+                }
+              }}
+              placeholder="섹션 이름 (예: 조망형)"
+              className="flex-1 bg-zinc-900/50 border border-blue-600 text-sm text-blue-200 rounded-lg py-2.5 px-3 focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:outline-none transition-all placeholder-zinc-600 shadow-sm"
+            />
+            <button
+              onClick={handleAddDivider}
+              disabled={!newDividerLabel.trim()}
+              className="flex-shrink-0 p-2.5 bg-blue-500/10 border border-blue-600 text-blue-400 rounded-lg hover:bg-blue-500/20 hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              title="섹션 추가"
+            >
+              <Icons.Plus className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => {
+                setShowDividerInput(false);
+                setNewDividerLabel('');
+              }}
+              className="flex-shrink-0 p-2.5 bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-300 rounded-lg transition-all"
+              title="취소"
+            >
+              <Icons.Close className="w-5 h-5" />
+            </button>
+          </div>
+        ) : null}
+
+        <div className="flex items-center gap-2">
+          <input
+              type="text"
+              value={newItemText}
+              onChange={(e) => setNewItemText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="새로운 할 일을 입력하세요"
+              className="flex-1 bg-zinc-900/50 border border-zinc-700 text-sm text-zinc-200 rounded-lg py-2.5 px-3 focus:ring-1 focus:ring-accent focus:border-accent focus:outline-none transition-all placeholder-zinc-600 shadow-sm"
+          />
           <button
-            onClick={handlePasteClick}
-            className="flex-shrink-0 p-2.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 hover:border-green-500/50 transition-all flex items-center gap-1.5"
-            title="복사된 항목 붙여넣기"
+            onClick={handleAddItem}
+            disabled={!newItemText.trim()}
+            className="flex-shrink-0 p-2.5 bg-accent/10 border border-accent/30 text-accent rounded-lg hover:bg-accent/20 hover:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            title="항목 추가 (또는 Enter 입력)"
           >
-            <Icons.Clipboard className="w-5 h-5" />
-            <span className="text-xs">붙여넣기</span>
+            <Icons.Plus className="w-5 h-5" />
           </button>
-        )}
+          <button
+            onClick={() => setShowDividerInput(!showDividerInput)}
+            className="flex-shrink-0 p-2.5 bg-blue-500/10 border border-blue-600 text-blue-400 rounded-lg hover:bg-blue-500/20 hover:border-blue-500 transition-all"
+            title="섹션 추가"
+          >
+            <Icons.Minus className="w-5 h-5" />
+          </button>
+          {hasClipboard && (
+            <button
+              onClick={handlePasteClick}
+              className="flex-shrink-0 p-2.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 hover:border-green-500/50 transition-all flex items-center gap-1.5"
+              title="복사된 항목 붙여넣기"
+            >
+              <Icons.Clipboard className="w-5 h-5" />
+              <span className="text-xs">붙여넣기</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* List */}
-      <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+      <div className="space-y-0.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
         {items.map((item, index) => {
+          // Render divider
+          if (isChecklistDivider(item)) {
+            return (
+              <ChecklistDivider
+                key={item.id}
+                divider={item}
+                index={index}
+                totalCount={items.length}
+                isFirst={index === 0}
+                isLast={index === items.length - 1}
+                onDelete={handleDeleteDivider}
+                onUpdate={handleUpdateDivider}
+                onDragStart={handleDragStart}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onMoveUp={handleMoveUp}
+                onMoveDown={handleMoveDown}
+              />
+            );
+          }
+
+          // Render regular item
           return (
           <div
             key={item.id}

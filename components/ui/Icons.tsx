@@ -24,7 +24,8 @@ import {
   Copy,
   Clipboard,
   Pencil,
-  CheckCircle
+  CheckCircle,
+  Minus
 } from 'lucide-react';
 
 export const Icons = {
@@ -53,5 +54,6 @@ export const Icons = {
   Copy,
   Clipboard,
   Edit: Pencil,
-  CheckCircle
+  CheckCircle,
+  Minus
 };

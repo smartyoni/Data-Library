@@ -536,10 +536,15 @@ export const firestoreDb = {
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-          .map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-          } as ChecklistItem))
+          .map(doc => {
+            const data = doc.data();
+            // Default to 'item' type for backward compatibility
+            return {
+              id: doc.id,
+              type: (data as any).type || 'item',
+              ...data,
+            } as ChecklistItem;
+          })
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       } catch (error) {
         console.error('Checklists 조회 실패:', error);
@@ -547,7 +552,7 @@ export const firestoreDb = {
       }
     },
 
-    create: async (itemId: string): Promise<ChecklistItem> => {
+    create: async (itemId: string): Promise<ChecklistItemData> => {
       try {
         // Get siblings to determine order
         const q = query(
@@ -560,6 +565,7 @@ export const firestoreDb = {
 
         const docRef = await addDoc(collection(db, COLLECTIONS.CHECKLISTS), {
           item_id: itemId,
+          type: 'item',
           text: '',
           is_checked: false,
           memo: '',
@@ -570,6 +576,7 @@ export const firestoreDb = {
         return {
           id: docRef.id,
           item_id: itemId,
+          type: 'item',
           text: '',
           is_checked: false,
           memo: '',
@@ -599,6 +606,49 @@ export const firestoreDb = {
         await deleteDoc(doc(db, COLLECTIONS.CHECKLISTS, id));
       } catch (error) {
         console.error('Checklist 삭제 실패:', error);
+        throw error;
+      }
+    },
+
+    createDivider: async (itemId: string, label: string): Promise<ChecklistDivider> => {
+      try {
+        // Get siblings to determine order
+        const q = query(
+          collection(db, COLLECTIONS.CHECKLISTS),
+          where('item_id', '==', itemId)
+        );
+        const snapshot = await getDocs(q);
+        const siblings = snapshot.docs.map(doc => doc.data() as ChecklistItem);
+        const maxOrder = siblings.reduce((max, item) => Math.max(max, item.order ?? 0), -1);
+
+        const docRef = await addDoc(collection(db, COLLECTIONS.CHECKLISTS), {
+          item_id: itemId,
+          type: 'divider',
+          label: label,
+          order: maxOrder + 1,
+          created_at: now(),
+        });
+
+        return {
+          id: docRef.id,
+          item_id: itemId,
+          type: 'divider',
+          label: label,
+          order: maxOrder + 1,
+          created_at: now(),
+        };
+      } catch (error) {
+        console.error('Divider 생성 실패:', error);
+        throw error;
+      }
+    },
+
+    updateDivider: async (id: string, updates: { label?: string }): Promise<void> => {
+      try {
+        const docRef = doc(db, COLLECTIONS.CHECKLISTS, id);
+        await updateDoc(docRef, updates as any);
+      } catch (error) {
+        console.error('Divider 업데이트 실패:', error);
         throw error;
       }
     },
