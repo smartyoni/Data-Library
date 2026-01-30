@@ -31,6 +31,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   // Drag and drop refs
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
+  const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -77,6 +78,14 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);
 
+  // Auto-height adjustment for editing textarea
+  useEffect(() => {
+    if (editingTextareaRef.current) {
+      editingTextareaRef.current.style.height = 'auto';
+      editingTextareaRef.current.style.height = editingTextareaRef.current.scrollHeight + 'px';
+    }
+  }, [editingItemText, editingItemId]);
+
   const handleAddItem = async () => {
     if (!newItemText.trim()) return;
 
@@ -95,10 +104,12 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-        e.preventDefault();
-        handleAddItem();
+    // Ctrl+Enter to add item
+    if (e.key === 'Enter' && e.ctrlKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      handleAddItem();
     }
+    // Enter alone allows newline (textarea default behavior)
   };
 
   const handleUpdate = async (id: string, updates: Partial<ChecklistItem>) => {
@@ -264,19 +275,20 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
         ) : null}
 
         <div className="flex items-center gap-2">
-          <input
-              type="text"
+          <textarea
               value={newItemText}
               onChange={(e) => setNewItemText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="새로운 할 일을 입력하세요"
-              className="flex-1 bg-zinc-900/50 border border-zinc-700 text-sm text-zinc-200 rounded-lg py-2.5 px-3 focus:ring-1 focus:ring-accent focus:border-accent focus:outline-none transition-all placeholder-zinc-600 shadow-sm"
+              placeholder="새로운 할 일을 입력하세요 (Ctrl+Enter로 추가)"
+              rows={1}
+              className="flex-1 bg-zinc-900/50 border border-zinc-700 text-sm text-zinc-200 rounded-lg py-2.5 px-3 focus:ring-1 focus:ring-accent focus:border-accent focus:outline-none transition-all placeholder-zinc-600 shadow-sm resize-none overflow-y-auto"
+              style={{ minHeight: '2.5rem', maxHeight: '10rem' }}
           />
           <button
             onClick={handleAddItem}
             disabled={!newItemText.trim()}
             className="flex-shrink-0 p-2.5 bg-accent/10 border border-accent/30 text-accent rounded-lg hover:bg-accent/20 hover:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            title="항목 추가 (또는 Enter 입력)"
+            title="항목 추가 (Ctrl+Enter)"
           >
             <Icons.Plus className="w-5 h-5" />
           </button>
@@ -349,6 +361,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             <div className="flex-1 min-w-0">
               {editingItemId === item.id ? (
                 <textarea
+                  ref={editingTextareaRef}
                   autoFocus
                   value={editingItemText}
                   onChange={(e) => setEditingItemText(e.target.value)}
@@ -360,7 +373,7 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
                     }
                   }}
                   className="w-full bg-zinc-950 border border-accent rounded px-2 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent resize-none overflow-y-auto"
-                  style={{ minHeight: '2.5rem', maxHeight: '5rem', lineHeight: '1.25rem' }}
+                  style={{ minHeight: '6rem', maxHeight: '40rem', lineHeight: '1.25rem' }}
                 />
               ) : (
                 <div
