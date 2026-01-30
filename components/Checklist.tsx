@@ -243,11 +243,6 @@ const Checklist: React.FC<ChecklistProps> = ({ itemId, onOpenMemo }) => {
             onContextMenu={(e) => handleContextMenu(e, item)}
             className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-green-500/20 transition-colors border border-transparent hover:border-green-500/30"
           >
-            {/* Desktop drag handle (hidden on mobile) */}
-            <div className="hidden md:block cursor-grab active:cursor-grabbing pt-1 text-zinc-600 hover:text-zinc-400">
-              <Icons.DragHandle className="w-4 h-4" />
-            </div>
-
             {/* Mobile up/down arrows (hidden on desktop) */}
             <div className="flex md:hidden flex-col gap-0.5 pt-1">
               <button

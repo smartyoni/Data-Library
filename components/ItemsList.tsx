@@ -304,10 +304,6 @@ const ItemsList: React.FC<ItemsListProps> = ({
                    ${!item.status_color && selectedItemId !== item.id ? 'border-l-2 border-transparent' : ''}
                  `.trim().replace(/\s+/g, ' ')}
                >
-                 <div className="cursor-grab active:cursor-grabbing p-1 text-zinc-600 hover:text-zinc-400 hidden md:block">
-                    <Icons.DragHandle className="w-4 h-4" />
-                 </div>
-
                  <div className="flex-1 min-w-0 pr-6">
                    <h3 className={`text-base md:text-sm font-medium leading-tight truncate ${selectedItemId === item.id ? 'text-white' : 'text-zinc-300'}`}>
                      {item.title || '제목 없음'}
