@@ -4,6 +4,7 @@ import ItemsList from './ItemsList';
 import ItemDetail from './ItemDetail';
 import BookmarkManager from './BookmarkManager';
 import MemoModal from './MemoModal';
+import ItemNoteModal from './ItemNoteModal';
 import MoveItemModal from './MoveItemModal';
 import { ChecklistClipboardProvider } from '../contexts/ChecklistClipboardContext';
 import { Category, Item, ChecklistItem, Workspace } from '../types';
@@ -54,6 +55,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   // Modal State
   const [isMemoModalOpen, setMemoModalOpen] = useState(false);
   const [currentMemoItem, setCurrentMemoItem] = useState<ChecklistItem | null>(null);
+  const [isNoteModalOpen, setNoteModalOpen] = useState(false);
   const [moveItemModalOpen, setMoveItemModalOpen] = useState(false);
   const [itemToMove, setItemToMove] = useState<Item | null>(null);
 
@@ -275,7 +277,16 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
 
   const saveMemo = async (id: string, text: string) => {
     await firestoreDb.checklist.update({ id, memo: text });
-    if(selectedItem) setSelectedItemId(selectedItem.id);
+    if (selectedItem) setSelectedItemId(selectedItem.id);
+  };
+
+  const handleOpenNote = () => {
+    setNoteModalOpen(true);
+  };
+
+  const handleSaveNote = async (id: string, text: string) => {
+    await firestoreDb.items.update({ id, description: text });
+    handleUpdateItemLocal(id, { description: text });
   };
 
   const handleDeleteWorkspace = () => {
@@ -312,7 +323,7 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   // CSS Logic for Responsive Views
   // Mobile: Show only one view at a time based on depth (Category -> Item -> Detail)
   // Desktop (md): Show all views in columns
-  
+
   const showSidebar = !selectedCategoryId; // Mobile: Show if no category selected
   const showItemsList = selectedCategoryId && !selectedItemId; // Mobile: Show if category selected but no item
   const showItemDetail = !!selectedItemId; // Mobile: Show if item selected
@@ -320,83 +331,92 @@ const WorkspaceView: React.FC<WorkspaceViewProps> = ({
   return (
     <ChecklistClipboardProvider itemId={selectedItemId || ''}>
       <div className="flex h-full w-full bg-background text-zinc-100 font-sans selection:bg-accent/30 overflow-hidden relative">
-      {/* Column 1: Categories */}
-      {/* Mobile: Hidden if category selected or bookmarks shown. Desktop: Always visible (w-64) */}
-      <div className={`${selectedCategoryId || showBookmarks ? 'hidden md:flex' : 'flex'} w-full md:w-64 flex-col border-r border-border bg-surface`}>
-        <Sidebar
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onSelectCategory={setSelectedCategoryId}
-          onRefresh={loadCategories}
-          workspaceName={workspace.name}
-          isLocked={workspace.is_locked}
-          onAddCategory={handleAddCategory}
-          onDeleteWorkspace={handleDeleteWorkspace}
-          onToggleLock={handleToggleLock}
-          onShowBookmarks={onShowBookmarks}
-          hiddenCategoriesCount={hiddenCategoriesCount}
-          allWorkspaces={allWorkspaces}
-          currentWorkspaceId={workspace.id}
-          onMoveCategory={handleExecuteMoveCategory}
-        />
-      </div>
-
-      {/* Column 2: Items List */}
-      {/* Mobile: Visible if category selected & no item selected & bookmarks not shown. Desktop: Visible if category selected (w-80) or placeholder */}
-      <div className={`${selectedCategoryId && !selectedItemId && !showBookmarks ? 'flex' : 'hidden md:flex'} ${selectedCategoryId ? 'w-full md:w-80' : 'hidden md:flex md:w-80'} flex-col border-r border-border bg-background`}>
-        {selectedCategoryId ? (
-          <ItemsList
-            categoryName={selectedCategory?.name}
-            items={items}
-            selectedItemId={selectedItemId}
-            onSelectItem={setSelectedItemId}
-            onAddItem={handleAddItem}
-            onDeleteItem={handleDeleteItem}
-            onMoveItem={handleMoveItemRequest}
-            onReorder={handleReorderItems}
-            loading={loadingItems}
-            onBack={handleBackToCategories}
+        {/* Column 1: Categories */}
+        {/* Mobile: Hidden if category selected or bookmarks shown. Tablet/Desktop (lg): Always visible (w-64) */}
+        <div className={`${selectedCategoryId || showBookmarks ? 'hidden lg:flex' : 'flex'} w-full lg:w-64 flex-col border-r border-border bg-surface`}>
+          <Sidebar
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={setSelectedCategoryId}
+            onRefresh={loadCategories}
+            workspaceName={workspace.name}
+            isLocked={workspace.is_locked}
+            onAddCategory={handleAddCategory}
+            onDeleteWorkspace={handleDeleteWorkspace}
+            onToggleLock={handleToggleLock}
+            onShowBookmarks={onShowBookmarks}
+            hiddenCategoriesCount={hiddenCategoriesCount}
+            allWorkspaces={allWorkspaces}
+            currentWorkspaceId={workspace.id}
+            onMoveCategory={handleExecuteMoveCategory}
           />
-        ) : (
-           /* Desktop Placeholder for Column 2 */
-          <div className="hidden md:flex flex-col items-center justify-center h-full text-zinc-600">
-             <Icons.Folder className="w-12 h-12 mb-2 opacity-20" />
-             <p className="text-sm">카테고리를 선택하세요</p>
-          </div>
-        )}
-      </div>
+        </div>
 
-      {/* Column 3: Item Detail or Bookmark Manager */}
-      {/* Mobile: Visible if item selected. Desktop: Always visible (flex-1) */}
-      <div className={`${selectedItemId || showBookmarks ? 'flex' : 'hidden md:flex'} flex-1 flex-col h-full bg-background relative min-w-0`}>
-        {showBookmarks ? (
-          <BookmarkManager onBack={onCloseBookmarks || (() => {})} />
-        ) : selectedItem ? (
-          <ItemDetail
-            key={selectedItem.id}
-            item={selectedItem}
-            onUpdateItem={handleUpdateItemLocal}
-            onOpenMemo={openMemo}
-            onBack={handleBackToItems}
-          />
-        ) : (
-          /* Desktop Placeholder for Column 3 */
-          <div className="hidden md:flex flex-col items-center justify-center h-full text-zinc-600">
-             <div className="w-16 h-16 bg-zinc-900/50 rounded-2xl flex items-center justify-center mb-4 border border-zinc-800">
+        {/* Column 2: Items List */}
+        {/* Mobile: Visible if category selected & no item selected & bookmarks not shown. Tablet/Desktop (lg): Visible if category selected (w-80) or placeholder */}
+        <div className={`${selectedCategoryId && !selectedItemId && !showBookmarks ? 'flex' : 'hidden lg:flex'} ${selectedCategoryId ? 'w-full lg:w-80' : 'hidden lg:flex lg:w-80'} flex-col border-r border-border bg-background`}>
+          {selectedCategoryId ? (
+            <ItemsList
+              categoryName={selectedCategory?.name}
+              items={items}
+              selectedItemId={selectedItemId}
+              onSelectItem={setSelectedItemId}
+              onAddItem={handleAddItem}
+              onDeleteItem={handleDeleteItem}
+              onMoveItem={handleMoveItemRequest}
+              onReorder={handleReorderItems}
+              loading={loadingItems}
+              onBack={handleBackToCategories}
+            />
+          ) : (
+            /* Tablet/Desktop Placeholder for Column 2 */
+            <div className="hidden lg:flex flex-col items-center justify-center h-full text-zinc-600">
+              <Icons.Folder className="w-12 h-12 mb-2 opacity-20" />
+              <p className="text-sm">카테고리를 선택하세요</p>
+            </div>
+          )}
+        </div>
+
+        {/* Column 3: Item Detail or Bookmark Manager */}
+        {/* Mobile: Visible if item selected. Tablet/Desktop (lg): Always visible (flex-1) */}
+        <div className={`${selectedItemId || showBookmarks ? 'flex' : 'hidden lg:flex'} flex-1 flex-col h-full bg-background relative min-w-0`}>
+          {showBookmarks ? (
+            <BookmarkManager onBack={onCloseBookmarks || (() => { })} />
+          ) : selectedItem ? (
+            <ItemDetail
+              key={selectedItem.id}
+              item={selectedItem}
+              onUpdateItem={handleUpdateItemLocal}
+              onOpenMemo={openMemo}
+              onOpenNote={handleOpenNote}
+              onBack={handleBackToItems}
+            />
+          ) : (
+            /* Tablet/Desktop Placeholder for Column 3 */
+            <div className="hidden lg:flex flex-col items-center justify-center h-full text-zinc-600">
+              <div className="w-16 h-16 bg-zinc-900/50 rounded-2xl flex items-center justify-center mb-4 border border-zinc-800">
                 <Icons.File className="w-8 h-8 text-zinc-700" />
-             </div>
-             <p className="text-zinc-500">항목을 선택하여 내용을 확인하세요.</p>
-          </div>
-        )}
-      </div>
+              </div>
+              <p className="text-zinc-500">항목을 선택하여 내용을 확인하세요.</p>
+            </div>
+          )}
+        </div>
 
-      {/* Global Memo Modal */}
-      <MemoModal
-        isOpen={isMemoModalOpen}
-        onClose={() => setMemoModalOpen(false)}
-        checklistItem={currentMemoItem}
-        onSave={saveMemo}
-      />
+        {/* Global Memo Modal */}
+        <MemoModal
+          isOpen={isMemoModalOpen}
+          onClose={() => setMemoModalOpen(false)}
+          checklistItem={currentMemoItem}
+          onSave={saveMemo}
+        />
+
+        {/* Global Note Modal */}
+        <ItemNoteModal
+          isOpen={isNoteModalOpen}
+          onClose={() => setNoteModalOpen(false)}
+          item={selectedItem || null}
+          onSave={handleSaveNote}
+        />
 
         {/* Global Move Item Modal */}
         <MoveItemModal

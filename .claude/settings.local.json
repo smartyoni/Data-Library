@@ -19,7 +19,11 @@
       "Bash(git revert:*)",
       "Bash(cat:*)",
       "Bash(npm run type-check:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git log:*)",
+      "Bash(timeout 5 tail:*)",
+      "Bash(exit 0)"
     ]
   }
 }

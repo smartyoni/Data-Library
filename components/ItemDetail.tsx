@@ -8,10 +8,11 @@ interface ItemDetailProps {
   item: Item;
   onUpdateItem: (id: string, updates: Partial<Item>) => void;
   onOpenMemo: (checklistItem: ChecklistItem) => void;
+  onOpenNote: () => void;
   onBack: () => void;
 }
 
-const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo, onBack }) => {
+const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo, onOpenNote, onBack }) => {
   const [title, setTitle] = useState(item.title);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -49,7 +50,15 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onUpdateItem, onOpenMemo,
           className="flex-1 bg-transparent text-lg md:text-xl font-bold text-white placeholder-zinc-600 border-none p-0 focus:ring-0 focus:outline-none truncate"
           placeholder="항목 제목을 입력하세요"
         />
-        
+
+        <button
+          onClick={onOpenNote}
+          className="flex-shrink-0 p-2 -mr-2 text-zinc-400 hover:text-white transition-colors"
+          title="노트 열기"
+        >
+          <Icons.File className="w-5 h-5" />
+        </button>
+
         {isSaving && (
            <div className="flex-shrink-0 flex items-center gap-1.5 text-xs text-accent bg-accent/10 px-2 py-1 rounded-full animate-pulse">
              <Icons.Save className="w-3.5 h-3.5" />

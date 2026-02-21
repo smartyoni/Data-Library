@@ -6,11 +6,18 @@ import { Workspace } from './types';
 import firestoreDb from './services/firestoreDb';
 import { Icons } from './components/ui/Icons';
 
-// 모바일 기기 감지
+// 모바일 및 태블릿 기기 감지
 const isMobileDevice = (): boolean => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  // 1. User Agent 기반 감지 (Android, iOS 태블릿 포함)
+  const userAgentCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
-  ) || window.matchMedia('(max-width: 768px)').matches;
+  );
+
+  // 2. 터치 인터페이스 및 화면 너비 기반 감지 (태블릿 대응을 위해 1024px로 확대)
+  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const screenWidthCheck = window.matchMedia('(max-width: 1024px)').matches;
+
+  return userAgentCheck || (isTouchDevice && screenWidthCheck);
 };
 
 const App: React.FC = () => {
@@ -32,8 +39,8 @@ const App: React.FC = () => {
   }>({
     selectedCategoryId: null,
     selectedItemId: null,
-    handleBackToCategories: () => {},
-    handleBackToItems: () => {},
+    handleBackToCategories: () => { },
+    handleBackToItems: () => { },
   });
 
   // WorkspaceView에서 상태를 받기 위한 콜백
@@ -177,7 +184,7 @@ const App: React.FC = () => {
       {activeWorkspace && !isBookmarkViewActive && (
         <button
           onClick={() => setIsBookmarkViewActive(true)}
-          className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-accent rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 transition-all z-50 border-2 border-white/10"
+          className="lg:hidden fixed bottom-20 right-6 w-14 h-14 bg-accent rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 transition-all z-50 border-2 border-white/10"
           title="북마크 관리자"
         >
           <Icons.Home className="w-6 h-6 text-white" />

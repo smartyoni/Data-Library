@@ -5,7 +5,7 @@
   "start_url": "/Data-Library/",
   "scope": "/Data-Library/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#09090b",
   "theme_color": "#3b82f6",
   "icons": [
@@ -28,7 +28,10 @@
       "purpose": "any"
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "screenshots": [
     {
       "src": "/Data-Library/favicon.svg",
